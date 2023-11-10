@@ -1,0 +1,10 @@
+name = "quasiGrad_testing"
+uuid = "e688449b-acb7-4b0e-8480-1e13fd2b69ec"
+authors = ["SamChevalier <chev856@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+quasiGrad = "ead79d5d-eeb6-4e9e-b9c0-d4b75b0c44ab"
