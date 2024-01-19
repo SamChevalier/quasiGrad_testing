@@ -1,6 +1,6 @@
 using quasiGrad
 
-# identify the data
+# %% identify the data
 InFile1 = "./data/scenario_027.json"
 
 # call the jsn data
@@ -11,13 +11,13 @@ adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasi
 
 # solve a single time period power flow with adam
 quasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
-stt = deepcopy(stt)
+stt0 = deepcopy(stt);
 
 # %% ============== runs tests here
 #
 # reset the state
 stt = deepcopy(stt0)
-qG.adam_max_time = 150.0
+qG.adam_max_time = 60.0
 
 # choose adam step sizes for power flow (initial)
 vm_pf_t0      = 1e-6
@@ -68,5 +68,22 @@ qG.alpha_pf_tf[:p_on]   = power_pf_tf/10.0 # downscale active power!!!!
 qG.alpha_pf_tf[:u_step_shunt] = bin_pf_tf
 
 quasiGrad.jack_solves_adam_pf!(adm, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd; first_solve = false)
+
+# %% === test the current stepping routine
+using Plots
+
+t0       = 10.0
+tf       = 35.0
+tnow     = t0:0.01:tf
+alpha_t0 = 10.0   # first step
+alpha_tf = 0.001  # last step
+
+tnorm          = @. 2.0*(tnow-t0)/(tf - t0) - 1.0 # scale between -1 and 1
+beta           = @. exp(4.0*tnorm)/(0.6 + exp(4.0*tnorm))
+log_stp_ratio  = @. log10(alpha_t0/alpha_tf)
+alpha_tnow     = @. 10.0 ^ (-beta*log_stp_ratio + log10(alpha_t0))
+
+# Plots.plot(tnow, alpha_tnow, xlabel="time (sec)")
+Plots.plot(tnow, alpha_tnow, xlabel="time (sec)", ylabel="step size", yaxis=:log)
 
 
