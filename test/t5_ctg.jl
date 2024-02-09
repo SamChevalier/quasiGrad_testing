@@ -5,11 +5,11 @@ include("./test_functions.jl")
 # %% here for convenience :)
 if true == false
     include("../src/quasiGrad_dual.jl")
-    sys = quasiGrad.build_sys(jsn)
+    sys = QuasiGrad.build_sys(jsn)
 end
 
 # %%
-sys = quasiGrad.build_sys(jsn)
+sys = QuasiGrad.build_sys(jsn)
 
 # %% file
 #data_dir  = "./test/data/c3/C3S0_20221208/D1/C3S0N00003/"
@@ -26,27 +26,27 @@ data_dir  = "./test/data/c3/C3S0_20221208/D3/C3S0N00073_phi_mod/"
 file_name = "scenario_002_phi_mod.json"
 
 # read and parse the input data
-jsn, prm, idx, sys = quasiGrad.load_and_parse_json(data_dir*file_name)
-qG                 = quasiGrad.initialize_qG(prm)
+jsn, prm, idx, sys = QuasiGrad.load_and_parse_json(data_dir*file_name)
+qG                 = QuasiGrad.initialize_qG(prm)
 qG.eval_grad     = true
 qG.constraint_grad_weight         = 1000.0
 
 # initialize
-cgd, GRB, grd, mgd, scr, stt = quasiGrad.initialize_states(idx, prm, sys);
+cgd, GRB, grd, mgd, scr, stt = QuasiGrad.initialize_states(idx, prm, sys);
 
 # perturb stt
 perturb!(stt, prm, idx, grd, sys, qG, 1.0)
 
 # initialize static gradients
-quasiGrad.initialize_static_grads!(prm, idx, grd, sys, qG)
-quasiGrad.clip_all!(prm, qG, stt, sys)
+QuasiGrad.initialize_static_grads!(prm, idx, grd, sys, qG)
+QuasiGrad.clip_all!(prm, qG, stt, sys)
 
 # %% initialize the states which adam will update -- the rest are fixed + ctg
-adm = quasiGrad.initialize_adam_states(sys)
-upd = quasiGrad.identify_update_states(prm, idx, stt, sys)
-ntk = quasiGrad.initialize_ctg(sys, prm, qG, idx)
+adm = QuasiGrad.initialize_adam_states(sys)
+upd = QuasiGrad.identify_update_states(prm, idx, stt, sys)
+ntk = QuasiGrad.initialize_ctg(sys, prm, qG, idx)
 
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 # call the ctg solver
 #include("../src/core/initializations.jl")
@@ -63,7 +63,7 @@ include("../src/core/contingencies.jl")
 
 # solve ctg (with gradients)
 qG.eval_grad = true
-quasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 # %%
 # duration
@@ -135,7 +135,7 @@ elseif qG.base_solver == "pcg"
         #
         # note: ctg[:ctb][tii][end] is modified in place,
         # and it represents the base case solution
-        _, ch = quasiGrad.cg!(ctb[tii], ntk.Ybr, flw.c, abstol = qG.pcg_tol, Pl=ntk.Ybr_ChPr, maxiter = qG.max_pcg_its, log = true)
+        _, ch = QuasiGrad.cg!(ctb[tii], ntk.Ybr, flw.c, abstol = qG.pcg_tol, Pl=ntk.Ybr_ChPr, maxiter = qG.max_pcg_its, log = true)
         
         # test the krylov solution
         if ~(ch.isconverged)
@@ -160,7 +160,7 @@ if qG.score_all_ctgs == true
     ###########################################################
     for ctg_ii in 1:sys.nctg
         # see the "else" case for comments and details
-        theta_k = quasiGrad.special_wmi_update(ctb[tii], ntk.u_k[ctg_ii], ntk.g_k[ctg_ii], flw.c)
+        theta_k = QuasiGrad.special_wmi_update(ctb[tii], ntk.u_k[ctg_ii], ntk.g_k[ctg_ii], flw.c)
         pflow_k = ntk.Yfr*theta_k  + flw.bt
         sfr     = sqrt.(flw.qfr2 + pflow_k.^2)
         sto     = sqrt.(flw.qto2 + pflow_k.^2)
@@ -180,7 +180,7 @@ else
 end
 
 # %%
-theta_k = quasiGrad.special_wmi_update(ctb[tii], ntk.u_k[ctg_ii], ntk.g_k[ctg_ii], flw.c)
+theta_k = QuasiGrad.special_wmi_update(ctb[tii], ntk.u_k[ctg_ii], ntk.g_k[ctg_ii], flw.c)
 pflow_k = ntk.Yfr*theta_k  + flw.bt
 sfr     = sqrt.(flw.qfr2 + pflow_k.^2)
 sto     = sqrt.(flw.qto2 + pflow_k.^2)
@@ -198,7 +198,7 @@ idx.pr[fr_bus]
 idx.cs[fr_bus]
 
 # %% 1. test if the gradient solution is correct -- p_on
-quasiGrad.flush_gradients!(grd, mgd, prm, qG, sys)
+QuasiGrad.flush_gradients!(grd, mgd, prm, qG, sys)
 qG.pcg_tol = 0.00000001
 
 qG.scale_c_sflow_testing = 1000.0
@@ -207,11 +207,11 @@ epsilon = 1e-5
 tii     = :t1 #Symbol("t"*string(Int64(round(rand(1)[1]*sys.nT)))); (tii == :t0 ? tii = :t1 : tii = tii)
 tii   = 1
 ind     = 101   #Int64(round(rand(1)[1]*sys.nb)); (ind == 0 ? ind = 1 : ind = ind)
-quasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 for tii in prm.ts.time_keys
     for dev in 1:sys.ndev
-        quasiGrad.apply_dev_q_grads!(tii, prm, qG, idx, stt, grd, mgd, dev, grd.dx.dq[tii][dev])
-        quasiGrad.apply_dev_p_grads!(tii, prm, qG, idx, stt, grd, mgd, dev, grd.dx.dp[tii][dev])
+        QuasiGrad.apply_dev_q_grads!(tii, prm, qG, idx, stt, grd, mgd, dev, grd.dx.dq[tii][dev])
+        QuasiGrad.apply_dev_p_grads!(tii, prm, qG, idx, stt, grd, mgd, dev, grd.dx.dp[tii][dev])
     end
 end
 z0      = copy(-(scr[:zbase] + scr[:zctg_min] + scr[:zctg_avg]))
@@ -220,27 +220,27 @@ dzdx    = copy(mgd.p_on[tii][ind])
 # update device power
 stt.p_on[tii][ind] += epsilon
 stt.dev_p[tii] = stt.p_on[tii] + stt.p_su[tii] + stt.p_sd[tii]
-quasiGrad.flush_gradients!(grd, mgd, prm, qG, sys)
-quasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.flush_gradients!(grd, mgd, prm, qG, sys)
+QuasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 zp      = copy(-(scr[:zbase] + scr[:zctg_min] + scr[:zctg_avg]))
 dzdx_num = (zp - z0)/epsilon
 println(dzdx)
 println(dzdx_num)
 
 # %% 1. test if the gradient solution is correct -- vm
-quasiGrad.flush_gradients!(grd, mgd, prm, qG, sys)
+QuasiGrad.flush_gradients!(grd, mgd, prm, qG, sys)
 qG.pcg_tol = 0.000000001
 
 epsilon = 1e-4
 tii     = :t1 #Symbol("t"*string(Int64(round(rand(1)[1]*sys.nT)))); (tii == :t0 ? tii = :t1 : tii = tii)
 tii   = 1
 ind     = 2   #Int64(round(rand(1)[1]*sys.nb)); (ind == 0 ? ind = 1 : ind = ind)
-quasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 for tii in prm.ts.time_keys
     for dev in 1:sys.ndev
-        quasiGrad.apply_dev_q_grads!(tii, prm, qG, idx, stt, grd, mgd, dev, grd.dx.dq[tii][dev])
+        QuasiGrad.apply_dev_q_grads!(tii, prm, qG, idx, stt, grd, mgd, dev, grd.dx.dq[tii][dev])
         
-        quasiGrad.apply_dev_p_grads!(tii, prm, qG, idx, stt, grd, mgd, dev, grd.dx.dp[tii][dev])
+        QuasiGrad.apply_dev_p_grads!(tii, prm, qG, idx, stt, grd, mgd, dev, grd.dx.dp[tii][dev])
     end
 end
 z0      = copy(-(scr[:zbase] + scr[:zctg_min] + scr[:zctg_avg]))
@@ -248,8 +248,8 @@ dzdx    = copy(mgd.vm[tii][ind])
 
 # update device power
 stt.vm[tii][ind] += epsilon
-quasiGrad.flush_gradients!(grd, mgd, prm, qG, sys)
-quasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.flush_gradients!(grd, mgd, prm, qG, sys)
+QuasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 zp      = copy(-(scr[:zbase] + scr[:zctg_min] + scr[:zctg_avg]))
 dzdx_num = (zp - z0)/epsilon
 println(dzdx)
@@ -261,7 +261,7 @@ println(dzdx_num)
 # solve a ctg
 qG.pcg_tol = 1e-9
 
-quasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 # grab a flow
 tii    = :t1
 ctg_ii = 1
@@ -275,7 +275,7 @@ pf  = copy(ctg[:pflow_k][tii][end][line])
 
 stt.p_on[tii][dev] += epsilon
 stt.dev_p[tii] = stt.p_on[tii] + stt.p_su[tii] + stt.p_sd[tii]
-quasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 pf_new = copy(ctg[:pflow_k][tii][end][line])
 
 # how much did the power flow change? can the ptdf matrix explain it?
@@ -294,26 +294,26 @@ println(ptdf[line,bus-1])
 
 
 # %% compute the states (without gradients)
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 # solve and apply a Gurobi projection!
-quasiGrad.solve_Gurobi_projection!(idx, prm, qG, stt, sys, upd)
-quasiGrad.apply_Gurobi_projection!(idx, prm, qG, stt, sys)
+QuasiGrad.solve_Gurobi_projection!(idx, prm, qG, stt, sys, upd)
+QuasiGrad.apply_Gurobi_projection!(idx, prm, qG, stt, sys)
 
 # %% re-compute the states (without gradients)
 #ctg[:theta_k][tii][end] = zeros(sys.nb-1)
 #qG.pcg_tol = 0.01
 #qG.pcg_tol = 0.001
 #qG.pcg_tol = 0.000001
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 # %% write a solution :)
-soln_dict = quasiGrad.prepare_solution(prm, stt, sys)
-quasiGrad.write_solution(data_dir*file_name, qG, soln_dict, scr)
+soln_dict = QuasiGrad.prepare_solution(prm, stt, sys)
+QuasiGrad.write_solution(data_dir*file_name, qG, soln_dict, scr)
 
 # %% --------------
 include("../src/quasiGrad_dual.jl")
-sys = quasiGrad.build_sys(jsn)
+sys = QuasiGrad.build_sys(jsn)
 
 # %% ================================
 include("../src/core/initializations.jl")
@@ -396,19 +396,19 @@ ac_ids = [prm.acline.id; prm.xfm.id ]
 ac_b_params = -[prm.acline.b_sr; prm.xfm.b_sr]
 
 # build the full incidence matrix: E = lines x buses
-E  = quasiGrad.build_incidence(idx, prm, stt, sys)
+E  = QuasiGrad.build_incidence(idx, prm, stt, sys)
 Er = E[:,2:end]
 
 # get the diagonal admittance matrix   => Ybs == "b susceptance"
-Ybs = quasiGrad.spdiagm(ac_b_params)
+Ybs = QuasiGrad.spdiagm(ac_b_params)
 Yb  = E'*Ybs*E
 Ybr = Yb[2:end,2:end]  # use @view ? 
 
 # should we precondition the base case?
 if qG.base_solver == "pcg"
-    Ybr_ChPr = quasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
+    Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
 else
-    Ybr_ChPr = quasiGrad.I
+    Ybr_ChPr = QuasiGrad.I
 end
 
 # get the flow matrix
@@ -426,7 +426,7 @@ ctg_params  = Dict(ctg_ii => Vector{Float64}(undef, length(prm.ctg.components[ct
 build_ctg = true
 if build_ctg == true
     nac   = sys.nac
-    Ybr_k = Dict(ctg_ii => quasiGrad.spzeros(nac,nac) for ctg_ii in 1:sys.nctg)
+    Ybr_k = Dict(ctg_ii => QuasiGrad.spzeros(nac,nac) for ctg_ii in 1:sys.nctg)
 else
     Ybr_k = 0
 end
@@ -494,7 +494,7 @@ ctb        = [zeros(sys.nb-1) for _ in 1:sys.nT]
 wct = [collect(1:sys.nctg) for _ in 1:sys.nT]
 
 # %%
-quasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 # %%
 include("../src/core/contingencies.jl")
 

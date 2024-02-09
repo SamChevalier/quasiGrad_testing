@@ -1,4 +1,4 @@
-using quasiGrad
+using QuasiGrad
 using Revise
 
 # %% files -- 1576 system
@@ -8,10 +8,10 @@ path = tfp*"C3E3.1_20230629/D1/C3E3N00617D1/scenario_001.json"
 
 # solve ED
 InFile1 = path
-jsn = quasiGrad.load_json(InFile1)
+jsn = QuasiGrad.load_json(InFile1)
 
 # initialize
-adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn)
+adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn)
 
 # write locally
 qG.write_location   = "local"
@@ -28,7 +28,7 @@ qG.print_linear_pf_iterations    = false
 qG.print_reserve_cleanup_success = false
 
 # solve
-quasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 stt0 = deepcopy(stt);
 
 # %% initialize the data-log
@@ -130,7 +130,7 @@ qG.alpha_tf = Dict(
 
 qG.print_zms     = true
 qG.adam_max_time = 100.0
-quasiGrad.run_adam_with_data_collection!(adm, cgd, ctg, data_log, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.run_adam_with_data_collection!(adm, cgd, ctg, data_log, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 
 # %% ==============
 using Makie
@@ -256,7 +256,7 @@ Makie.Legend(fig[1, 2], [l0, l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, l11, l12, 
 
 
 
-# %% quasiGrad plot
+# %% QuasiGrad plot
 #
 # solve with adam
 stt = deepcopy(stt0);
@@ -419,7 +419,7 @@ run_adam_and_plot!(ax, fig, z_plt, adm, cgd, ctg, data_log, flw, grd, idx, mgd, 
 
 
 # %% =======================
-function run_adam_and_plot!(ax::Makie.Axis, fig::Makie.Figure, z_plt::Dict{Symbol, Dict{Symbol, Float64}}, adm::quasiGrad.Adam, cgd::quasiGrad.ConstantGrad, ctg::quasiGrad.Contingency, data_log::Dict{Symbol, Vector{Float64}}, flw::quasiGrad.Flow, grd::quasiGrad.Grad, idx::quasiGrad.Index, mgd::quasiGrad.MasterGrad, ntk::quasiGrad.Network, prm::quasiGrad.Param, qG::quasiGrad.QG, scr::Dict{Symbol, Float64}, stt::quasiGrad.State, sys::quasiGrad.System, upd::Dict{Symbol, Vector{Vector{Int64}}}; clip_pq_based_on_bins::Bool=false)
+function run_adam_and_plot!(ax::Makie.Axis, fig::Makie.Figure, z_plt::Dict{Symbol, Dict{Symbol, Float64}}, adm::QuasiGrad.Adam, cgd::QuasiGrad.ConstantGrad, ctg::QuasiGrad.Contingency, data_log::Dict{Symbol, Vector{Float64}}, flw::QuasiGrad.Flow, grd::QuasiGrad.Grad, idx::QuasiGrad.Index, mgd::QuasiGrad.MasterGrad, ntk::QuasiGrad.Network, prm::QuasiGrad.Param, qG::QuasiGrad.QG, scr::Dict{Symbol, Float64}, stt::QuasiGrad.State, sys::QuasiGrad.System, upd::Dict{Symbol, Vector{Vector{Int64}}}; clip_pq_based_on_bins::Bool=false)
     # NOTE -- "clip_pq_based_on_bins = true" is only used once all binaries have been fixed!
     #         so, use in on the very last adam iteration after binaries have been set.
     # 
@@ -428,7 +428,7 @@ function run_adam_and_plot!(ax::Makie.Axis, fig::Makie.Figure, z_plt::Dict{Symbo
     fp = true
 
     # flush adam just once!
-    quasiGrad.flush_adam!(adm, flw, prm, upd)
+    QuasiGrad.flush_adam!(adm, flw, prm, upd)
 
     # loop and solve adam twice: once for an initialization, and once for a true run
     qG.skip_ctg_eval = false
@@ -450,7 +450,7 @@ function run_adam_and_plot!(ax::Makie.Axis, fig::Makie.Figure, z_plt::Dict{Symbo
         qG.adm_step += 1
 
         # step decay
-        quasiGrad.adam_step_decay!(qG, time(), adam_start, adam_start+qG.adam_max_time)
+        QuasiGrad.adam_step_decay!(qG, time(), adam_start, adam_start+qG.adam_max_time)
 
         # decay beta and pre-compute
         qG.beta1_decay         = qG.beta1_decay*qG.beta1
@@ -460,48 +460,48 @@ function run_adam_and_plot!(ax::Makie.Axis, fig::Makie.Figure, z_plt::Dict{Symbo
 
         # update weight parameters?
         if qG.apply_grad_weight_homotopy == true
-            quasiGrad.update_penalties!(prm, qG, time(), adam_start, adam_start+qG.adam_max_time)
+            QuasiGrad.update_penalties!(prm, qG, time(), adam_start, adam_start+qG.adam_max_time)
         end
 
         # compute all states and grads
-        quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, clip_pq_based_on_bins=clip_pq_based_on_bins)
+        QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, clip_pq_based_on_bins=clip_pq_based_on_bins)
 
         # take an adam step
-        quasiGrad.adam!(adm, mgd, prm, qG, stt, upd)
+        QuasiGrad.adam!(adm, mgd, prm, qG, stt, upd)
         GC.safepoint()
 
         update_plot!(ax, fig, qG, scr, z_plt, fp)
         display(fig)
 
         # stop?
-        run_adam = quasiGrad.adam_termination(adam_start, qG, run_adam, qG.adam_max_time)
+        run_adam = QuasiGrad.adam_termination(adam_start, qG, run_adam, qG.adam_max_time)
 
         # log adam data for plotting
-        # => quasiGrad.log_data(data_log, qG, scr)
+        # => QuasiGrad.log_data(data_log, qG, scr)
     end
 
 end
 
-function update_plot!(ax::Makie.Axis, fig::Makie.Figure, qG::quasiGrad.QG, scr::Dict{Symbol, Float64}, z_plt::Dict{Symbol, Dict{Symbol, Float64}}, fp::Bool)
+function update_plot!(ax::Makie.Axis, fig::Makie.Figure, qG::QuasiGrad.QG, scr::Dict{Symbol, Float64}, z_plt::Dict{Symbol, Dict{Symbol, Float64}}, fp::Bool)
     #
     # is this the first plot? if adm_step == 1, then we don't plot (just update)
     if qG.adm_step > 1 # !(plt[:first_plot] || adm_step == 1)
         # first, set the current values
-        z_plt[:now][:zms]  = quasiGrad.scale_z(scr[:zms])
-        z_plt[:now][:pzms] = quasiGrad.scale_z(scr[:zms_penalized])      
-        z_plt[:now][:zhat] = quasiGrad.scale_z(scr[:zt_penalty] - qG.constraint_grad_weight*scr[:zhat_mxst])
-        z_plt[:now][:ctg]  = quasiGrad.scale_z(scr[:zctg_min] + scr[:zctg_avg])
-        z_plt[:now][:emnx] = quasiGrad.scale_z(scr[:emnx])
-        z_plt[:now][:zp]   = quasiGrad.scale_z(scr[:zp])
-        z_plt[:now][:zq]   = quasiGrad.scale_z(scr[:zq])
-        z_plt[:now][:acl]  = quasiGrad.scale_z(scr[:acl])
-        z_plt[:now][:xfm]  = quasiGrad.scale_z(scr[:xfm])
-        z_plt[:now][:zoud] = quasiGrad.scale_z(scr[:zoud])
-        z_plt[:now][:zone] = quasiGrad.scale_z(scr[:zone])
-        z_plt[:now][:rsv]  = quasiGrad.scale_z(scr[:rsv])
-        z_plt[:now][:enpr] = quasiGrad.scale_z(scr[:enpr])
-        z_plt[:now][:encs] = quasiGrad.scale_z(scr[:encs])
-        z_plt[:now][:zsus] = quasiGrad.scale_z(scr[:zsus])
+        z_plt[:now][:zms]  = QuasiGrad.scale_z(scr[:zms])
+        z_plt[:now][:pzms] = QuasiGrad.scale_z(scr[:zms_penalized])      
+        z_plt[:now][:zhat] = QuasiGrad.scale_z(scr[:zt_penalty] - qG.constraint_grad_weight*scr[:zhat_mxst])
+        z_plt[:now][:ctg]  = QuasiGrad.scale_z(scr[:zctg_min] + scr[:zctg_avg])
+        z_plt[:now][:emnx] = QuasiGrad.scale_z(scr[:emnx])
+        z_plt[:now][:zp]   = QuasiGrad.scale_z(scr[:zp])
+        z_plt[:now][:zq]   = QuasiGrad.scale_z(scr[:zq])
+        z_plt[:now][:acl]  = QuasiGrad.scale_z(scr[:acl])
+        z_plt[:now][:xfm]  = QuasiGrad.scale_z(scr[:xfm])
+        z_plt[:now][:zoud] = QuasiGrad.scale_z(scr[:zoud])
+        z_plt[:now][:zone] = QuasiGrad.scale_z(scr[:zone])
+        z_plt[:now][:rsv]  = QuasiGrad.scale_z(scr[:rsv])
+        z_plt[:now][:enpr] = QuasiGrad.scale_z(scr[:enpr])
+        z_plt[:now][:encs] = QuasiGrad.scale_z(scr[:encs])
+        z_plt[:now][:zsus] = QuasiGrad.scale_z(scr[:zsus])
 
         # now, plot!
         #
@@ -565,21 +565,21 @@ function update_plot!(ax::Makie.Axis, fig::Makie.Figure, qG::quasiGrad.QG, scr::
     end
 
     # update the previous values!
-    z_plt[:prev][:zms]  = quasiGrad.scale_z(scr[:zms])
-    z_plt[:prev][:pzms] = quasiGrad.scale_z(scr[:zms_penalized])      
-    z_plt[:prev][:zhat] = quasiGrad.scale_z(scr[:zt_penalty] - qG.constraint_grad_weight*scr[:zhat_mxst])
-    z_plt[:prev][:ctg]  = quasiGrad.scale_z(scr[:zctg_min] + scr[:zctg_avg])
-    z_plt[:prev][:emnx] = quasiGrad.scale_z(scr[:emnx])
-    z_plt[:prev][:zp]   = quasiGrad.scale_z(scr[:zp])
-    z_plt[:prev][:zq]   = quasiGrad.scale_z(scr[:zq])
-    z_plt[:prev][:acl]  = quasiGrad.scale_z(scr[:acl])
-    z_plt[:prev][:xfm]  = quasiGrad.scale_z(scr[:xfm])
-    z_plt[:prev][:zoud] = quasiGrad.scale_z(scr[:zoud])
-    z_plt[:prev][:zone] = quasiGrad.scale_z(scr[:zone])
-    z_plt[:prev][:rsv]  = quasiGrad.scale_z(scr[:rsv])
-    z_plt[:prev][:enpr] = quasiGrad.scale_z(scr[:enpr])
-    z_plt[:prev][:encs] = quasiGrad.scale_z(scr[:encs])
-    z_plt[:prev][:zsus] = quasiGrad.scale_z(scr[:zsus])
+    z_plt[:prev][:zms]  = QuasiGrad.scale_z(scr[:zms])
+    z_plt[:prev][:pzms] = QuasiGrad.scale_z(scr[:zms_penalized])      
+    z_plt[:prev][:zhat] = QuasiGrad.scale_z(scr[:zt_penalty] - qG.constraint_grad_weight*scr[:zhat_mxst])
+    z_plt[:prev][:ctg]  = QuasiGrad.scale_z(scr[:zctg_min] + scr[:zctg_avg])
+    z_plt[:prev][:emnx] = QuasiGrad.scale_z(scr[:emnx])
+    z_plt[:prev][:zp]   = QuasiGrad.scale_z(scr[:zp])
+    z_plt[:prev][:zq]   = QuasiGrad.scale_z(scr[:zq])
+    z_plt[:prev][:acl]  = QuasiGrad.scale_z(scr[:acl])
+    z_plt[:prev][:xfm]  = QuasiGrad.scale_z(scr[:xfm])
+    z_plt[:prev][:zoud] = QuasiGrad.scale_z(scr[:zoud])
+    z_plt[:prev][:zone] = QuasiGrad.scale_z(scr[:zone])
+    z_plt[:prev][:rsv]  = QuasiGrad.scale_z(scr[:rsv])
+    z_plt[:prev][:enpr] = QuasiGrad.scale_z(scr[:enpr])
+    z_plt[:prev][:encs] = QuasiGrad.scale_z(scr[:encs])
+    z_plt[:prev][:zsus] = QuasiGrad.scale_z(scr[:zsus])
 end
 
 # %% ===

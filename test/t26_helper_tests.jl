@@ -1,17 +1,17 @@
-using quasiGrad
+using QuasiGrad
 using Revise
 
 # files
 path = "C:/Users/Samuel.HORACE/Dropbox (Personal)/Documents/Julia/GO3_testcases/C3S0_20221208/C3S0N00014/scenario_003.json"
 path = "C:/Users/Samuel.HORACE/Dropbox (Personal)/Documents/Julia/GO3_testcases/C3S0_20221208/C3S0N00073/scenario_002.json"
 path = "C:/Users/Samuel.HORACE/Dropbox (Personal)/Documents/Julia/GO3_testcases/C3S1_20221222/C3S1N01576D1/scenario_001.json"
-jsn  = quasiGrad.load_json(path)
+jsn  = QuasiGrad.load_json(path)
 
 # initialize
-adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn, perturb_states=false);
+adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn, perturb_states=false);
 
 # run copper plate ED
-quasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 stt0 = deepcopy(stt)
 qG.num_threads = 10
 
@@ -19,44 +19,44 @@ qG.num_threads = 10
 qG.skip_ctg_eval = true
 
 stt = deepcopy(stt0)
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
-@time quasiGrad.soft_reserve_cleanup!(idx, prm, qG, stt, sys, upd)
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+@time QuasiGrad.soft_reserve_cleanup!(idx, prm, qG, stt, sys, upd)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 # %% step 2: projection tests
 stt = deepcopy(stt0)
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 #qG.print_projection_success = false
 
-@time quasiGrad.project!(50.0, idx, prm, qG, stt, sys, upd, final_projection = false)
+@time QuasiGrad.project!(50.0, idx, prm, qG, stt, sys, upd, final_projection = false)
 
 # %%
-@time quasiGrad.apply_Gurobi_projection_and_states!(idx, prm, qG, stt, sys)
+@time QuasiGrad.apply_Gurobi_projection_and_states!(idx, prm, qG, stt, sys)
 
 # %%
-@time quasiGrad.batch_fix!(51.0, prm, stt, sys, upd);
+@time QuasiGrad.batch_fix!(51.0, prm, stt, sys, upd);
 
 # %% step 3: projection tests
 stt = deepcopy(stt0)
-quasiGrad.project!(pct_round, idx, prm, qG, stt, sys, upd, final_projection = false)
+QuasiGrad.project!(pct_round, idx, prm, qG, stt, sys, upd, final_projection = false)
 
 # %% step 4: snap shunts test
 fix = solver_itr == (n_its-1)
-quasiGrad.snap_shunts!(fix, prm, qG, stt, upd)
+QuasiGrad.snap_shunts!(fix, prm, qG, stt, upd)
 
 qG.num_threads = 10
 
 # %% ===========
 stt = deepcopy(stt0)
 @time GC.gc()
-@time quasiGrad.soft_reserve_cleanup!(idx, prm, qG, stt, sys, upd)
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+@time QuasiGrad.soft_reserve_cleanup!(idx, prm, qG, stt, sys, upd)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 # %% =======
 
-@time quasiGrad.write_solution("solution.jl", prm, qG, stt, sys)
-#@time quasiGrad.reserve_cleanup!(idx, prm, qG, stt, sys, upd)
+@time QuasiGrad.write_solution("solution.jl", prm, qG, stt, sys)
+#@time QuasiGrad.reserve_cleanup!(idx, prm, qG, stt, sys, upd)
 
 
 # %% stt0 = deepcopy(stt)
@@ -64,13 +64,13 @@ qG.max_linear_pfs       = 6
 qG.max_linear_pfs_total = 6
 
 stt = deepcopy(stt0)
-quasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd)
 
 
 # %%
-#quasiGrad.apply_q_injections!(idx, prm, qG, stt, sys)
-#quasiGrad.solve_parallel_linear_pf_with_Gurobi!(flw, grd, idx, ntk, prm, qG, stt, sys)
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+#QuasiGrad.apply_q_injections!(idx, prm, qG, stt, sys)
+#QuasiGrad.solve_parallel_linear_pf_with_Gurobi!(flw, grd, idx, ntk, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 # initialize plot
 plt = Dict(:plot            => false,
@@ -80,7 +80,7 @@ plt = Dict(:plot            => false,
            :disp_freq       => 5)
 
 # initialize
-ax, fig, z_plt  = quasiGrad.initialize_plot(cgd, ctg, flw, grd, idx, mgd, ntk, plt, prm, qG, scr, stt, sys)
+ax, fig, z_plt  = QuasiGrad.initialize_plot(cgd, ctg, flw, grd, idx, mgd, ntk, plt, prm, qG, scr, stt, sys)
 
 qG.print_freq                  = 10
 qG.num_threads                 = 10
@@ -109,33 +109,33 @@ qG.adam_max_time               = 250.0
 qG.apply_grad_weight_homotopy  = false
 qG.decay_adam_step             = false
 
-quasiGrad.run_adam_with_plotting!(adm, ax, cgd, ctg, fig, flw, grd, idx, mgd, 
+QuasiGrad.run_adam_with_plotting!(adm, ax, cgd, ctg, fig, flw, grd, idx, mgd, 
                                   ntk, plt, prm, qG, scr, stt, sys, upd, z_plt)
 
 # %% ============
 pct_round = 0.0
-quasiGrad.project!(pct_round, idx, prm, qG, stt, sys, upd, final_projection = false)
+QuasiGrad.project!(pct_round, idx, prm, qG, stt, sys, upd, final_projection = false)
 
 # %% ===================
 stt = deepcopy(stt0)
-#quasiGrad.project!(50.0, idx, prm, qG, stt, sys, upd, final_projection = false)
+#QuasiGrad.project!(50.0, idx, prm, qG, stt, sys, upd, final_projection = false)
 
-quasiGrad.apply_q_injections!(idx, prm, qG, stt, sys)
-quasiGrad.solve_parallel_linear_pf_with_Gurobi!(flw, grd, idx, ntk, prm, qG, stt, sys)
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.apply_q_injections!(idx, prm, qG, stt, sys)
+QuasiGrad.solve_parallel_linear_pf_with_Gurobi!(flw, grd, idx, ntk, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 #qG.num_lbfgs_steps = 2000
 
-#adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn, perturb_states=false);
-#quasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd)
+#adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn, perturb_states=false);
+#QuasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd)
 # %%
 
-quasiGrad.cleanup_constrained_pf_with_Gurobi!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.cleanup_constrained_pf_with_Gurobi!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 
 # %%
-quasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 # %% 
-quasiGrad.solve_economic_dispatch!(idx, prm, qG, scr, stt, sys, upd, include_sus_in_ed=true)
+QuasiGrad.solve_economic_dispatch!(idx, prm, qG, scr, stt, sys, upd, include_sus_in_ed=true)
 
 tii = 5
 dt  = prm.ts.duration[tii]
@@ -146,7 +146,7 @@ gam = stt.dev_p[5] .- stt.dev_p[4] .- dt.*(prm.dev.p_ramp_up_ub.*(stt.u_on_dev[t
 sort(gam)
 
 # %%
-usd = quasiGrad.solve_economic_dispatch!(idx, prm, qG, scr, stt, sys, upd, include_sus_in_ed=true)
+usd = QuasiGrad.solve_economic_dispatch!(idx, prm, qG, scr, stt, sys, upd, include_sus_in_ed=true)
 
 # %%
 tii = 5
@@ -162,15 +162,15 @@ end
 
 # %% ==========
 tii = Int8(1)
-quasiGrad.update_Yflow!(idx, ntk, prm, stt, sys, tii)
+QuasiGrad.update_Yflow!(idx, ntk, prm, stt, sys, tii)
 
 # %%
 tii = Int8(1)
 stt.phi[tii] = 0.1*randn(144)
 stt.tau[tii] = 1.0 .+ 0.1*randn(144)
 
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
-quasiGrad.update_Yflow!(idx, ntk, prm, stt, sys, tii)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.update_Yflow!(idx, ntk, prm, stt, sys, tii)
 
 #ntk.Yflow_fr_real[tii] .= ntk.Yflow_acline_series_real .+ ntk.Yflow_xfm_series_fr_real[tii] .+ ntk.Yflow_acline_shunt_fr_real .+ ntk.Yflow_xfm_shunt_fr_real[tii]
 #ntk.Yflow_fr_imag[tii] .= ntk.Yflow_acline_series_imag .+ ntk.Yflow_xfm_series_fr_imag[tii] .+ ntk.Yflow_acline_shunt_fr_imag .+ ntk.Yflow_xfm_shunt_fr_imag[tii]
@@ -208,20 +208,20 @@ stt.Ir_flow_fr[tii] .= ntk.Yflow_fr_real[tii]*stt.vr[tii] - ntk.Yflow_fr_imag[ti
 stt.Ii_flow_fr[tii] .= ntk.Yflow_fr_imag[tii]*stt.vr[tii] + ntk.Yflow_fr_real[tii]*stt.vi[tii]
 
 # Populate MI
-MIr = quasiGrad.spdiagm(sys.nb, sys.nb, stt.Ir_flow_fr[tii])*ntk.Efr
-MIi = quasiGrad.spdiagm(sys.nb, sys.nb, stt.Ii_flow_fr[tii])*ntk.Efr
+MIr = QuasiGrad.spdiagm(sys.nb, sys.nb, stt.Ir_flow_fr[tii])*ntk.Efr
+MIi = QuasiGrad.spdiagm(sys.nb, sys.nb, stt.Ii_flow_fr[tii])*ntk.Efr
 MI  = [MIr MIi;
         -MIi MIr]
 
 # Populate MV
-MVr = quasiGrad.spdiagm(sys.nb, sys.nb, ntk.Efr*stt.vr[tii])
-MVi = quasiGrad.spdiagm(sys.nb, sys.nb, ntk.Efr*stt.vi[tii])
+MVr = QuasiGrad.spdiagm(sys.nb, sys.nb, ntk.Efr*stt.vr[tii])
+MVi = QuasiGrad.spdiagm(sys.nb, sys.nb, ntk.Efr*stt.vi[tii])
 MV  = [MVr -MVi;
        MVi  MVr]
 
 # Populate RV
-RV = [quasiGrad.spdiagm(sys.nb, sys.nb, stt.cva[tii])  quasiGrad.spdiagm(sys.nb, sys.nb, .-stt.vi[tii]); 
-      quasiGrad.spdiagm(sys.nb, sys.nb, stt.sva[tii])  quasiGrad.spdiagm(sys.nb, sys.nb, stt.vr[tii])];
+RV = [QuasiGrad.spdiagm(sys.nb, sys.nb, stt.cva[tii])  QuasiGrad.spdiagm(sys.nb, sys.nb, .-stt.vi[tii]); 
+      QuasiGrad.spdiagm(sys.nb, sys.nb, stt.sva[tii])  QuasiGrad.spdiagm(sys.nb, sys.nb, stt.vr[tii])];
        
 # Build Jacobian
 Jpqf = (MI + MV*NYf)*RV   
@@ -343,21 +343,21 @@ function PF_JacobianSf(Vm,Theta,Vc,YLE,YSEx,Ex,NYf,reduce)
 end
 
 # %%
-quasiGrad.project!(10.0, idx, prm, qG, stt, sys, upd, final_projection = false)
+QuasiGrad.project!(10.0, idx, prm, qG, stt, sys, upd, final_projection = false)
 
 # E7. write the final solution
-quasiGrad.write_solution("solution.jl", prm, qG, stt, sys)
+QuasiGrad.write_solution("solution.jl", prm, qG, stt, sys)
 
 # %% E8. post process
-quasiGrad.post_process_stats(true, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.post_process_stats(true, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 # %% test the flow jacobians :)
 tii = Int8(1)
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
-quasiGrad.update_Ybus!(idx, ntk, prm, stt, sys, tii)
-quasiGrad.update_Yflow!(idx, ntk, prm, stt, sys, tii)
-quasiGrad.build_Jac_and_pq0!(ntk, qG, stt, sys, tii)
-quasiGrad.build_Jac_sfr_and_sfr0!(idx, ntk, prm, stt, sys, tii)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.update_Ybus!(idx, ntk, prm, stt, sys, tii)
+QuasiGrad.update_Yflow!(idx, ntk, prm, stt, sys, tii)
+QuasiGrad.build_Jac_and_pq0!(ntk, qG, stt, sys, tii)
+QuasiGrad.build_Jac_sfr_and_sfr0!(idx, ntk, prm, stt, sys, tii)
 
 # %%
 s0 = copy(stt.xfm_sfr[tii])
@@ -366,13 +366,13 @@ s0 = copy(stt.xfm_sfr[tii])
 epsilon_val = 1e-5
 stt.vm[tii][1413] = stt.vm[tii][1413] + epsilon_val
 
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
-quasiGrad.update_Ybus!(idx, ntk, prm, stt, sys, tii)
-quasiGrad.update_Yflow!(idx, ntk, prm, stt, sys, tii)
-quasiGrad.build_Jac_and_pq0!(ntk, qG, stt, sys, tii)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.update_Ybus!(idx, ntk, prm, stt, sys, tii)
+QuasiGrad.update_Yflow!(idx, ntk, prm, stt, sys, tii)
+QuasiGrad.build_Jac_and_pq0!(ntk, qG, stt, sys, tii)
 
 # %%
-quasiGrad.build_Jac_sfr_and_sfr0!(idx, ntk, prm, stt, sys, tii)
+QuasiGrad.build_Jac_sfr_and_sfr0!(idx, ntk, prm, stt, sys, tii)
 # %%
 snew = copy(stt.xfm_sfr[tii])
 

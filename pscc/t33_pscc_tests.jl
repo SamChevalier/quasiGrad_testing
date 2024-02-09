@@ -1,4 +1,4 @@
-using quasiGrad
+using QuasiGrad
 using Revise
 
 # file path
@@ -21,24 +21,24 @@ NetworkModel          = "test"
 AllowSwitching        = 0
 run                   = true
 
-quasiGrad.compute_quasiGrad_solution_d1(InFile6049, NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
+QuasiGrad.compute_quasiGrad_solution_d1(InFile6049, NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
 # %% ===
 
-# quasiGrad.compute_quasiGrad_solution_d1(InFile73  , NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
-# quasiGrad.compute_quasiGrad_solution_d1(InFile2000, NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
-# quasiGrad.compute_quasiGrad_solution_d1(InFile617 , NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
+# QuasiGrad.compute_quasiGrad_solution_d1(InFile73  , NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
+# QuasiGrad.compute_quasiGrad_solution_d1(InFile2000, NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
+# QuasiGrad.compute_quasiGrad_solution_d1(InFile617 , NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
 # 
 # # %% call the d1 solver
-# quasiGrad.compute_quasiGrad_solution_d1(InFile73  , NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
-quasiGrad.compute_quasiGrad_solution_d1(InFile617 , NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
-quasiGrad.compute_quasiGrad_solution_d1(InFile1576, NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
-quasiGrad.compute_quasiGrad_solution_d1(InFile2000, NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
-quasiGrad.compute_quasiGrad_solution_d1(InFile4224, NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
+# QuasiGrad.compute_quasiGrad_solution_d1(InFile73  , NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
+QuasiGrad.compute_quasiGrad_solution_d1(InFile617 , NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
+QuasiGrad.compute_quasiGrad_solution_d1(InFile1576, NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
+QuasiGrad.compute_quasiGrad_solution_d1(InFile2000, NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
+QuasiGrad.compute_quasiGrad_solution_d1(InFile4224, NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
 # %% ===
-quasiGrad.compute_quasiGrad_solution_d1(InFile6049, NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
+QuasiGrad.compute_quasiGrad_solution_d1(InFile6049, NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
 
 # %%
-quasiGrad.compute_quasiGrad_solution_d1(InFile6717, NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
+QuasiGrad.compute_quasiGrad_solution_d1(InFile6717, NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
 
 # %%
-quasiGrad.compute_quasiGrad_solution_d1(InFile8316, NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
+QuasiGrad.compute_quasiGrad_solution_d1(InFile8316, NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)

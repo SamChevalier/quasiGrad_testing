@@ -1,5 +1,5 @@
 # Test #1 -- test if the power flow equations and gradients were coded up correctly :)
-function test1_acline_flows_and_grads(prm::quasiGrad.Param, idx::quasiGrad.Index, state::Dict{Symbol,Vector{Float64}}, grad::Dict{Symbol,Vector{Float64}}, jac::Dict{Symbol,quasiGrad.SparseMatrixCSC{Float64, Int64}})
+function test1_acline_flows_and_grads(prm::QuasiGrad.Param, idx::QuasiGrad.Index, state::Dict{Symbol,Vector{Float64}}, grad::Dict{Symbol,Vector{Float64}}, jac::Dict{Symbol,QuasiGrad.SparseMatrixCSC{Float64, Int64}})
     vm          = [1.01; 0.95; 0.99];
     va          = [0.24; -0.2; 0.1];
     tau         = [1.01; 0.97]
@@ -79,7 +79,7 @@ function test1_acline_flows_and_grads(prm::quasiGrad.Param, idx::quasiGrad.Index
     # dvmfr
     state = deepcopy(states_0)
     state[:vm][1] = state[:vm][1] + eps_val
-    quasiGrad.update_acline_flows_and_grads!(true, grad, jac, prm, state, idx)
+    QuasiGrad.update_acline_flows_and_grads!(true, grad, jac, prm, state, idx)
     df_dvmfr_num = ([state[:acline_pfr][1] state[:acline_qfr][1] state[:acline_pto][1] state[:acline_qto][1]] - 
                     [func_0[:acline_pfr][1] func_0[:acline_qfr][1] func_0[:acline_pto][1] func_0[:acline_qto][1]])/eps_val
     df_dvmfr     = [grad_0[:acline_dpfr_dvmfr][1] grad_0[:acline_dqfr_dvmfr][1] grad_0[:acline_dpto_dvmfr][1] grad_0[:acline_dqto_dvmfr][1]]
@@ -87,7 +87,7 @@ function test1_acline_flows_and_grads(prm::quasiGrad.Param, idx::quasiGrad.Index
     # dvmto
     state = deepcopy(states_0)
     state[:vm][2] = state[:vm][2] + eps_val
-    quasiGrad.update_acline_flows_and_grads!(true, grad, jac, prm, state, idx)
+    QuasiGrad.update_acline_flows_and_grads!(true, grad, jac, prm, state, idx)
     df_dvmto_num = ([state[:acline_pfr][1] state[:acline_qfr][1] state[:acline_pto][1] state[:acline_qto][1]] - 
                     [func_0[:acline_pfr][1] func_0[:acline_qfr][1] func_0[:acline_pto][1] func_0[:acline_qto][1]])/eps_val
     df_dvmto     = [grad_0[:acline_dpfr_dvmto][1] grad_0[:acline_dqfr_dvmto][1] grad_0[:acline_dpto_dvmto][1] grad_0[:acline_dqto_dvmto][1]]
@@ -95,7 +95,7 @@ function test1_acline_flows_and_grads(prm::quasiGrad.Param, idx::quasiGrad.Index
     # dvafr
     state = deepcopy(states_0)
     state[:va][1] = state[:va][1] + eps_val
-    quasiGrad.update_acline_flows_and_grads!(true, grad, jac, prm, state, idx)
+    QuasiGrad.update_acline_flows_and_grads!(true, grad, jac, prm, state, idx)
     df_dvafr_num = ([state[:acline_pfr][1] state[:acline_qfr][1] state[:acline_pto][1] state[:acline_qto][1]] - 
                     [func_0[:acline_pfr][1] func_0[:acline_qfr][1] func_0[:acline_pto][1] func_0[:acline_qto][1]])/eps_val
     df_dvafr     = [grad_0[:acline_dpfr_dvafr][1] grad_0[:acline_dqfr_dvafr][1] grad_0[:acline_dpto_dvafr][1] grad_0[:acline_dqto_dvafr][1]]
@@ -103,7 +103,7 @@ function test1_acline_flows_and_grads(prm::quasiGrad.Param, idx::quasiGrad.Index
     # dvafr
     state = deepcopy(states_0)
     state[:va][2] = state[:va][2] + eps_val
-    quasiGrad.update_acline_flows_and_grads!(true, grad, jac, prm, state, idx)
+    QuasiGrad.update_acline_flows_and_grads!(true, grad, jac, prm, state, idx)
     df_dvato_num = ([state[:acline_pfr][1] state[:acline_qfr][1] state[:acline_pto][1] state[:acline_qto][1]] - 
                     [func_0[:acline_pfr][1] func_0[:acline_qfr][1] func_0[:acline_pto][1] func_0[:acline_qto][1]])/eps_val
     df_dvato     = [grad_0[:acline_dpfr_dvato][1] grad_0[:acline_dqfr_dvato][1] grad_0[:acline_dpto_dvato][1] grad_0[:acline_dqto_dvato][1]]
@@ -111,7 +111,7 @@ function test1_acline_flows_and_grads(prm::quasiGrad.Param, idx::quasiGrad.Index
     # duon
     state = deepcopy(states_0)
     state[:u_on_acline][1] = state[:u_on_acline][1] + eps_val
-    quasiGrad.update_acline_flows_and_grads!(true, grad, jac, prm, state, idx)
+    QuasiGrad.update_acline_flows_and_grads!(true, grad, jac, prm, state, idx)
     df_duon_num = ([state[:acline_pfr][1] state[:acline_qfr][1] state[:acline_pto][1] state[:acline_qto][1]] - 
                    [func_0[:acline_pfr][1] func_0[:acline_qfr][1] func_0[:acline_pto][1] func_0[:acline_qto][1]])/eps_val
     df_duon     = [grad_0[:acline_dpfr_duon][1] grad_0[:acline_dqfr_duon][1] grad_0[:acline_dpto_duon][1] grad_0[:acline_dqto_duon][1]]
@@ -149,7 +149,7 @@ function test1_acline_flows_and_grads(prm::quasiGrad.Param, idx::quasiGrad.Index
 end
 
 # Test #2 -- xfm
-function test2_xfm_flows_and_grads(prm::quasiGrad.Param, idx::quasiGrad.Index, state::Dict{Symbol,Vector{Float64}}, grad::Dict{Symbol,Vector{Float64}}, jac::Dict{Symbol,quasiGrad.SparseMatrixCSC{Float64, Int64}})
+function test2_xfm_flows_and_grads(prm::QuasiGrad.Param, idx::QuasiGrad.Index, state::Dict{Symbol,Vector{Float64}}, grad::Dict{Symbol,Vector{Float64}}, jac::Dict{Symbol,QuasiGrad.SparseMatrixCSC{Float64, Int64}})
     vm          = [1.01; 0.95; 0.99];
     va          = [0.24; -0.2; 0.1];
     tau         = [1.01; 0.97]
@@ -172,7 +172,7 @@ function test2_xfm_flows_and_grads(prm::quasiGrad.Param, idx::quasiGrad.Index, s
     prm.xfm.b_to[1] = 0.2;
 
     # call power flow
-    quasiGrad.update_xfm_flows_and_grads!(true, state, grad, jac, prm, state, idx)
+    QuasiGrad.update_xfm_flows_and_grads!(true, state, grad, jac, prm, state, idx)
 
     # ===================== test: do the flows make sense?
     r_series, x_series, b_ch, g_fr, b_fr, g_to, b_to, from_bus, to_bus = parse_json_xfm_raw_params(json_data)
@@ -229,7 +229,7 @@ function test2_xfm_flows_and_grads(prm::quasiGrad.Param, idx::quasiGrad.Index, s
     # dvmfr
     state = deepcopy(states_0)
     state[:vm][2] = state[:vm][2] + eps_val
-    quasiGrad.update_xfm_flows_and_grads!(true, state, grad, jac, prm, state, idx)
+    QuasiGrad.update_xfm_flows_and_grads!(true, state, grad, jac, prm, state, idx)
     df_dvmfr_num = ([state[:xfm_pfr][1] state[:xfm_qfr][1] state[:xfm_pto][1] state[:xfm_qto][1]] - 
                     [func_0[:xfm_pfr][1] func_0[:xfm_qfr][1] func_0[:xfm_pto][1] func_0[:xfm_qto][1]])/eps_val
     df_dvmfr     = [grad_0[:xfm_dpfr_dvmfr][1] grad_0[:xfm_dqfr_dvmfr][1] grad_0[:xfm_dpto_dvmfr][1] grad_0[:xfm_dqto_dvmfr][1]]
@@ -237,7 +237,7 @@ function test2_xfm_flows_and_grads(prm::quasiGrad.Param, idx::quasiGrad.Index, s
     # dvmto
     state = deepcopy(states_0)
     state[:vm][3] = state[:vm][3] + eps_val
-    quasiGrad.update_xfm_flows_and_grads!(true, state, grad, jac, prm, state, idx)
+    QuasiGrad.update_xfm_flows_and_grads!(true, state, grad, jac, prm, state, idx)
     df_dvmto_num = ([state[:xfm_pfr][1] state[:xfm_qfr][1] state[:xfm_pto][1] state[:xfm_qto][1]] - 
                     [func_0[:xfm_pfr][1] func_0[:xfm_qfr][1] func_0[:xfm_pto][1] func_0[:xfm_qto][1]])/eps_val
     df_dvmto     = [grad_0[:xfm_dpfr_dvmto][1] grad_0[:xfm_dqfr_dvmto][1] grad_0[:xfm_dpto_dvmto][1] grad_0[:xfm_dqto_dvmto][1]]
@@ -245,7 +245,7 @@ function test2_xfm_flows_and_grads(prm::quasiGrad.Param, idx::quasiGrad.Index, s
     # dvafr
     state = deepcopy(states_0)
     state[:va][2] = state[:va][2] + eps_val
-    quasiGrad.update_xfm_flows_and_grads!(true, state, grad, jac, prm, state, idx)
+    QuasiGrad.update_xfm_flows_and_grads!(true, state, grad, jac, prm, state, idx)
     df_dvafr_num = ([state[:xfm_pfr][1] state[:xfm_qfr][1] state[:xfm_pto][1] state[:xfm_qto][1]] - 
                     [func_0[:xfm_pfr][1] func_0[:xfm_qfr][1] func_0[:xfm_pto][1] func_0[:xfm_qto][1]])/eps_val
     df_dvafr     = [grad_0[:xfm_dpfr_dvafr][1] grad_0[:xfm_dqfr_dvafr][1] grad_0[:xfm_dpto_dvafr][1] grad_0[:xfm_dqto_dvafr][1]]
@@ -253,7 +253,7 @@ function test2_xfm_flows_and_grads(prm::quasiGrad.Param, idx::quasiGrad.Index, s
     # dvato
     state = deepcopy(states_0)
     state[:va][3] = state[:va][3] + eps_val
-    quasiGrad.update_xfm_flows_and_grads!(true, state, grad, jac, prm, state, idx)
+    QuasiGrad.update_xfm_flows_and_grads!(true, state, grad, jac, prm, state, idx)
     df_dvato_num = ([state[:xfm_pfr][1] state[:xfm_qfr][1] state[:xfm_pto][1] state[:xfm_qto][1]] - 
                     [func_0[:xfm_pfr][1] func_0[:xfm_qfr][1] func_0[:xfm_pto][1] func_0[:xfm_qto][1]])/eps_val
     df_dvato     = [grad_0[:xfm_dpfr_dvato][1] grad_0[:xfm_dqfr_dvato][1] grad_0[:xfm_dpto_dvato][1] grad_0[:xfm_dqto_dvato][1]]
@@ -261,7 +261,7 @@ function test2_xfm_flows_and_grads(prm::quasiGrad.Param, idx::quasiGrad.Index, s
     # dtau
     state = deepcopy(states_0)
     state[:tau][1] = state[:tau][1] + eps_val
-    quasiGrad.update_xfm_flows_and_grads!(true, state, grad, jac, prm, state, idx)
+    QuasiGrad.update_xfm_flows_and_grads!(true, state, grad, jac, prm, state, idx)
     df_dtau_num = ([state[:xfm_pfr][1] state[:xfm_qfr][1] state[:xfm_pto][1] state[:xfm_qto][1]] - 
                    [func_0[:xfm_pfr][1] func_0[:xfm_qfr][1] func_0[:xfm_pto][1] func_0[:xfm_qto][1]])/eps_val
     df_dtau     = [grad_0[:xfm_dpfr_dtau][1] grad_0[:xfm_dqfr_dtau][1] grad_0[:xfm_dpto_dtau][1] grad_0[:xfm_dqto_dtau][1]]
@@ -269,7 +269,7 @@ function test2_xfm_flows_and_grads(prm::quasiGrad.Param, idx::quasiGrad.Index, s
     # dphi
     state = deepcopy(states_0)
     state[:phi][1] = state[:phi][1] + eps_val
-    quasiGrad.update_xfm_flows_and_grads!(true, state, grad, jac, prm, state, idx)
+    QuasiGrad.update_xfm_flows_and_grads!(true, state, grad, jac, prm, state, idx)
     df_dphi_num = ([state[:xfm_pfr][1] state[:xfm_qfr][1] state[:xfm_pto][1] state[:xfm_qto][1]] - 
                    [func_0[:xfm_pfr][1] func_0[:xfm_qfr][1] func_0[:xfm_pto][1] func_0[:xfm_qto][1]])/eps_val
     df_dphi     = [grad_0[:xfm_dpfr_dphi][1] grad_0[:xfm_dqfr_dphi][1] grad_0[:xfm_dpto_dphi][1] grad_0[:xfm_dqto_dphi][1]]
@@ -277,7 +277,7 @@ function test2_xfm_flows_and_grads(prm::quasiGrad.Param, idx::quasiGrad.Index, s
     # duon
     state = deepcopy(states_0)
     state[:u_on_xfm][1] = state[:u_on_xfm][1] + eps_val
-    quasiGrad.update_xfm_flows_and_grads!(true, state, grad, jac, prm, state, idx)
+    QuasiGrad.update_xfm_flows_and_grads!(true, state, grad, jac, prm, state, idx)
     df_duon_num = ([state[:xfm_pfr][1] state[:xfm_qfr][1] state[:xfm_pto][1] state[:xfm_qto][1]] - 
                    [func_0[:xfm_pfr][1] func_0[:xfm_qfr][1] func_0[:xfm_pto][1] func_0[:xfm_qto][1]])/eps_val
     df_duon     = [grad_0[:xfm_dpfr_duon][1] grad_0[:xfm_dqfr_duon][1] grad_0[:xfm_dpto_duon][1] grad_0[:xfm_dqto_duon][1]]
@@ -317,7 +317,7 @@ function test2_xfm_flows_and_grads(prm::quasiGrad.Param, idx::quasiGrad.Index, s
 end
 
 # Test #3 -- adam test: solve for power flows (lines + xfms)
-function test3_adam_solve_pf(prm::quasiGrad.Param, idx::quasiGrad.Index, state::Dict{Symbol,Vector{Float64}}, grad::Dict{Symbol,Vector{Float64}}, jac::Dict{Symbol,quasiGrad.SparseMatrixCSC{Float64, Int64}}, N_steps::Int64, dt::Float64, adam_prm::Dict{Symbol, Float64})
+function test3_adam_solve_pf(prm::QuasiGrad.Param, idx::QuasiGrad.Index, state::Dict{Symbol,Vector{Float64}}, grad::Dict{Symbol,Vector{Float64}}, jac::Dict{Symbol,QuasiGrad.SparseMatrixCSC{Float64, Int64}}, N_steps::Int64, dt::Float64, adam_prm::Dict{Symbol, Float64})
     vm          = [1.0; 1.01; 0.97];
     va          = [0.0; -0.025; 0.02];
     tau         = [1.025; 1.0]
@@ -334,8 +334,8 @@ function test3_adam_solve_pf(prm::quasiGrad.Param, idx::quasiGrad.Index, state::
         :u_on_xfm    => u_on_xfm)
 
     # initial flows
-    quasiGrad.update_acline_flows_and_grads!(true, state, grad, jac, prm, state, idx)
-    quasiGrad.update_xfm_flows_and_grads!(true, state, grad, jac, prm, state, idx)
+    QuasiGrad.update_acline_flows_and_grads!(true, state, grad, jac, prm, state, idx)
+    QuasiGrad.update_xfm_flows_and_grads!(true, state, grad, jac, prm, state, idx)
 
     # save the solution target
     func_0   = deepcopy(state)
@@ -378,8 +378,8 @@ function test3_adam_solve_pf(prm::quasiGrad.Param, idx::quasiGrad.Index, state::
         #state[:phi]  = adam_states[:GO_states][9:10]
 
         # flows
-        quasiGrad.acline_flows!(true, grad, jac, prm, state, idx)
-        quasiGrad.xfm_flows!(true, grad, jac, prm, state, idx)
+        QuasiGrad.acline_flows!(true, grad, jac, prm, state, idx)
+        QuasiGrad.xfm_flows!(true, grad, jac, prm, state, idx)
 
         # define loss and its grad
         loss, loss_grad = test3_loss_and_grad(func_0, state, grad)
@@ -394,7 +394,7 @@ function test3_adam_solve_pf(prm::quasiGrad.Param, idx::quasiGrad.Index, state::
         loss_log[ii]    = loss
 
         # adam step
-        adam_states = quasiGrad.adam(adam_prm, adam_states, loss_grad, idx)
+        adam_states = QuasiGrad.adam(adam_prm, adam_states, loss_grad, idx)
     
     end
 
@@ -433,8 +433,8 @@ end
 function test3_subtest_loss_grad(state, grad, jac, prm, idx, func_0)
 
     # test the loss gradient
-    quasiGrad.acline_flows!(true, grad, jac, prm, state, idx)
-    quasiGrad.xfm_flows!(true, grad, jac, prm, state, idx)
+    QuasiGrad.acline_flows!(true, grad, jac, prm, state, idx)
+    QuasiGrad.xfm_flows!(true, grad, jac, prm, state, idx)
 
     # get the loss value and gradient
     loss_val, loss_grad = test3_loss_and_grad(func_0, state, grad)
@@ -448,8 +448,8 @@ function test3_subtest_loss_grad(state, grad, jac, prm, idx, func_0)
     states_n0[:vm][2] = states_n0[:vm][2] + eps_val
 
     # flows
-    quasiGrad.update_acline_flows_and_grads!(true, grad, jac, prm, states_n0, idx)
-    quasiGrad.update_xfm_flows_and_grads!(true, grad, jac, prm, states_n0, idx)
+    QuasiGrad.update_acline_flows_and_grads!(true, grad, jac, prm, states_n0, idx)
+    QuasiGrad.update_xfm_flows_and_grads!(true, grad, jac, prm, states_n0, idx)
     
     # new loss value
     loss_val_n, ~ = test3_loss_and_grad(func_0, state, grad)
@@ -462,7 +462,7 @@ function test3_subtest_loss_grad(state, grad, jac, prm, idx, func_0)
 end
 
 # ac line flows
-function acline_flows_test!(eval_grad::Bool, grad::Dict{Symbol,Vector{Float64}}, jac::Dict{Symbol, quasiGrad.SparseMatrixCSC{Float64, Int64}}, prm::quasiGrad.Param, state::Dict{Symbol,Vector{Float64}}, idx::quasiGrad.Index)
+function acline_flows_test!(eval_grad::Bool, grad::Dict{Symbol,Vector{Float64}}, jac::Dict{Symbol, QuasiGrad.SparseMatrixCSC{Float64, Int64}}, prm::QuasiGrad.Param, state::Dict{Symbol,Vector{Float64}}, idx::QuasiGrad.Index)
     # line parameters
     g_sr = prm.acline.g_sr
     b_sr = prm.acline.b_sr
@@ -632,7 +632,7 @@ end
 function calc_nzms_qG(grd, idx, mgd, prm, qG, stt, sys)
 
         # compute states and grads
-        quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+        QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
     
         # output
         return scr[:nzms]
@@ -644,43 +644,43 @@ function calc_nzms(cgd, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
     qG.run_susd_updates = true
 
     # flush the gradient -- both master grad and some of the gradient terms
-    quasiGrad.flush_gradients!(grd, mgd, prm, qG, sys)
+    QuasiGrad.flush_gradients!(grd, mgd, prm, qG, sys)
 
     # don't clip!!
     
     # compute network flows and injections
-    quasiGrad.acline_flows!(grd, idx, prm, qG, stt, sys)
-    quasiGrad.xfm_flows!(grd, idx, prm, qG, stt, sys)
-    quasiGrad.shunts!(grd, idx, prm, qG, stt)
+    QuasiGrad.acline_flows!(grd, idx, prm, qG, stt, sys)
+    QuasiGrad.xfm_flows!(grd, idx, prm, qG, stt, sys)
+    QuasiGrad.shunts!(grd, idx, prm, qG, stt)
 
     # device powers
-    quasiGrad.all_device_statuses_and_costs!(grd, prm, qG, stt)
-    quasiGrad.device_startup_states!(grd, idx, mgd, prm, qG, stt, sys)
-    quasiGrad.device_active_powers!(idx, prm, qG, stt, sys)
-    quasiGrad.device_reactive_powers!(idx, prm, qG, stt)
-    quasiGrad.energy_costs!(grd, prm, qG, stt, sys)
-    quasiGrad.energy_penalties!(grd, idx, prm, qG, scr, stt, sys)
-    quasiGrad.penalized_device_constraints!(grd, idx, mgd, prm, qG, scr, stt, sys)
-    quasiGrad.device_reserve_costs!(prm, qG, stt)
+    QuasiGrad.all_device_statuses_and_costs!(grd, prm, qG, stt)
+    QuasiGrad.device_startup_states!(grd, idx, mgd, prm, qG, stt, sys)
+    QuasiGrad.device_active_powers!(idx, prm, qG, stt, sys)
+    QuasiGrad.device_reactive_powers!(idx, prm, qG, stt)
+    QuasiGrad.energy_costs!(grd, prm, qG, stt, sys)
+    QuasiGrad.energy_penalties!(grd, idx, prm, qG, scr, stt, sys)
+    QuasiGrad.penalized_device_constraints!(grd, idx, mgd, prm, qG, scr, stt, sys)
+    QuasiGrad.device_reserve_costs!(prm, qG, stt)
 
     # now, we can compute the power balances
-    quasiGrad.power_balance!(grd, idx, prm, qG, stt, sys)
+    QuasiGrad.power_balance!(grd, idx, prm, qG, stt, sys)
 
     # compute reserve margins and penalties (no grads here)
-    quasiGrad.reserve_balance!(idx, prm, qG, stt, sys)
+    QuasiGrad.reserve_balance!(idx, prm, qG, stt, sys)
 
     # score the contingencies and take the gradients
     @info "ctg solve on"
-    quasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+    QuasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
     # @info "ctg solve off"
     
     # score the market surplus function
-    quasiGrad.score_zt!(idx, prm, qG, scr, stt) 
-    quasiGrad.score_zbase!(qG, scr)
-    quasiGrad.score_zms!(scr)
+    QuasiGrad.score_zt!(idx, prm, qG, scr, stt) 
+    QuasiGrad.score_zbase!(qG, scr)
+    QuasiGrad.score_zms!(scr)
 
     # compute the master grad
-    quasiGrad.master_grad!(cgd, grd, idx, mgd, prm, qG, stt, sys)
+    QuasiGrad.master_grad!(cgd, grd, idx, mgd, prm, qG, stt, sys)
     # output
 
     return -scr[:zms_penalized] # previously => scr[:nzms]
@@ -750,10 +750,10 @@ function load_solve_project_write(path::String, solution_file::String)
     
     # load!
     InFile1 = path
-    jsn = quasiGrad.load_json(InFile1)
+    jsn = QuasiGrad.load_json(InFile1)
 
     # initialize
-    adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn)
+    adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn)
 
     # write locally
     qG.write_location   = "local"
@@ -770,14 +770,14 @@ function load_solve_project_write(path::String, solution_file::String)
     qG.print_reserve_cleanup_success = false
     
     # solve
-    quasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
-    quasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd)
-    quasiGrad.project!(100.0, idx, prm, qG, stt, sys, upd, final_projection = false)
-    quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
-    quasiGrad.project!(100.0, idx, prm, qG, stt, sys, upd, final_projection = true)
-    quasiGrad.snap_shunts!(true, prm, qG, stt, upd)
-    quasiGrad.post_process_stats(true, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
-    quasiGrad.write_solution(solution_file, prm, qG, stt, sys)
+    QuasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+    QuasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd)
+    QuasiGrad.project!(100.0, idx, prm, qG, stt, sys, upd, final_projection = false)
+    QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+    QuasiGrad.project!(100.0, idx, prm, qG, stt, sys, upd, final_projection = true)
+    QuasiGrad.snap_shunts!(true, prm, qG, stt, upd)
+    QuasiGrad.post_process_stats(true, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+    QuasiGrad.write_solution(solution_file, prm, qG, stt, sys)
 
     # write results to file
     m1 = "zms = $(scr[:zms])"
@@ -807,7 +807,7 @@ function load_solve_project_write(path::String, solution_file::String)
 end
 
 ## %% ============
-#function f_t_symbols(stt::quasiGrad.State, dev::Int64, tkeys::Vector{Symbol})
+#function f_t_symbols(stt::QuasiGrad.State, dev::Int64, tkeys::Vector{Symbol})
 #    output = sum(stt.vm[tii][dev] for tii in tkeys)
 #end
 #

@@ -1,4 +1,4 @@
-using quasiGrad
+using QuasiGrad
 using Revise
 
 # add the "solver"
@@ -167,10 +167,10 @@ tfp = "C:/Users/Samuel.HORACE/Dropbox (Personal)/Documents/Julia/GO3_testcases/"
 path = tfp*"C3E3.1_20230629/D1/C3E3N06049D1/scenario_031.json"
 
 InFile1 = path
-jsn = quasiGrad.load_json(InFile1)
+jsn = QuasiGrad.load_json(InFile1)
 
 # initialize
-adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn)
+adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn)
 qG.write_location                = "local"
 qG.eval_grad                     = true
 qG.always_solve_ctg              = true
@@ -182,7 +182,7 @@ qG.print_projection_success      = false
 qG.print_linear_pf_iterations    = false
 qG.print_reserve_cleanup_success = false
 
-quasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 
 # %% ===================
 path = tfp*"C3E3.1_20230629/D1/C3E3N06717D1/scenario_048.json"
@@ -196,10 +196,10 @@ solution_file = "C3E3N01576D2_scenario_043_solution.json"
 
 # load!
 InFile1 = path
-jsn = quasiGrad.load_json(InFile1)
+jsn = QuasiGrad.load_json(InFile1)
 
 # initialize
-adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn)
+adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn)
 
 # write locally
 qG.write_location   = "local"
@@ -216,14 +216,14 @@ qG.print_linear_pf_iterations    = false
 qG.print_reserve_cleanup_success = false
 
 # solve
-quasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
-quasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd)
-quasiGrad.project!(100.0, idx, prm, qG, stt, sys, upd, final_projection = false)
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
-quasiGrad.project!(100.0, idx, prm, qG, stt, sys, upd, final_projection = true)
-quasiGrad.snap_shunts!(true, prm, qG, stt, upd)
-quasiGrad.post_process_stats(true, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
-quasiGrad.write_solution(solution_file, prm, qG, stt, sys)
+QuasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.project!(100.0, idx, prm, qG, stt, sys, upd, final_projection = false)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.project!(100.0, idx, prm, qG, stt, sys, upd, final_projection = true)
+QuasiGrad.snap_shunts!(true, prm, qG, stt, upd)
+QuasiGrad.post_process_stats(true, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.write_solution(solution_file, prm, qG, stt, sys)
 
 # %% ====================
 stt0 = deepcopy(stt)
@@ -260,7 +260,7 @@ for dev in prm.dev.dev_keys
                         stt.u_sus_bnd[tii][dev][ii] = 0.0
                     else
                         # grab the largest
-                        #stt.u_sus_bnd[tii][dev][ii] = quasiGrad.max_binary(dev, idx, ii, stt, tii) 
+                        #stt.u_sus_bnd[tii][dev][ii] = QuasiGrad.max_binary(dev, idx, ii, stt, tii) 
                         stt.u_sus_bnd[tii][dev][ii] = maximum(stt.u_on_dev_Trx[dev][tij] for tij in idx.Ts_sus_jft[dev][tii][ii])
                     end
                 else
@@ -316,7 +316,7 @@ for dev in prm.dev.dev_keys
 end
 
 # %% ========
-model = Model(optimizer_with_attributes(() -> Gurobi.Optimizer(quasiGrad.GRB_ENV[]), "OutputFlag" => 0, MOI.Silent() => true, "Threads" => qG.num_threads); add_bridges = false)
+model = Model(optimizer_with_attributes(() -> Gurobi.Optimizer(QuasiGrad.GRB_ENV[]), "OutputFlag" => 0, MOI.Silent() => true, "Threads" => qG.num_threads); add_bridges = false)
 z_sus = Vector{AffExpr}(undef, sys.ndev)
 
 # we define these as vectors so we can parallelize safely
@@ -324,7 +324,7 @@ for dev in prm.dev.dev_keys
     z_sus[dev]   = AffExpr(0.0)
 end
 
-u_sus = Dict{Int64, Vector{Vector{quasiGrad.VariableRef}}}(tii => [@variable(model, [sus = 1:prm.dev.num_sus[dev]], Bin) for dev in 1:sys.ndev] for tii in prm.ts.time_keys)  
+u_sus = Dict{Int64, Vector{Vector{QuasiGrad.VariableRef}}}(tii => [@variable(model, [sus = 1:prm.dev.num_sus[dev]], Bin) for dev in 1:sys.ndev] for tii in prm.ts.time_keys)  
 
 for dev in prm.dev.dev_keys
     # loop over each time period and define the hard constraints

@@ -1,4 +1,4 @@
-using quasiGrad
+using QuasiGrad
 using Revise
 
 # files
@@ -11,4 +11,4 @@ NetworkModel          = "test"
 AllowSwitching        = 0
 
 # %% run qG!
-quasiGrad.compute_quasiGrad_solution_feas(InFile1, NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching)
+QuasiGrad.compute_quasiGrad_solution_feas(InFile1, NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching)

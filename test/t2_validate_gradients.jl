@@ -1,5 +1,5 @@
 # test solver itself :)
-using quasiGrad
+using QuasiGrad
 using Revise
 
 # load things
@@ -9,10 +9,10 @@ path = "C:/Users/Samuel.HORACE/Dropbox (Personal)/Documents/Julia/GO3_testcases/
 path = "C:/Users/Samuel.HORACE/Dropbox (Personal)/Documents/Julia/GO3_testcases/C3S1_20221222/C3S1N00600D1/scenario_001.json"
 
 # load
-jsn = quasiGrad.load_json(path)
+jsn = QuasiGrad.load_json(path)
 
 # initialize the system
-adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn, perturb_states = true);
+adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn, perturb_states = true);
 
 # %% reset -- to help with numerical conditioning of the market surplus function 
 # (so that we can take its derivative numerically)
@@ -212,7 +212,7 @@ end
 
 # %% README: if you perturb over the max power, the device cost will error
 #         out -- this happens a lot.
-#quasiGrad.clip_all!(prm, qG, stt, sys)
+#QuasiGrad.clip_all!(prm, qG, stt, sys)
 include("./test_functions.jl")
 
 qG.pg_tol = 0.0
@@ -258,14 +258,14 @@ if true == false
     qG.scale_c_sflow_testing = 1.0
 
     # run and write
-    quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
-    quasiGrad.solve_Gurobi_projection!(idx, prm, qG, stt, sys, upd)
-    quasiGrad.apply_Gurobi_projection!(idx, prm, qG, stt, sys)
-    quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+    QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+    QuasiGrad.solve_Gurobi_projection!(idx, prm, qG, stt, sys, upd)
+    QuasiGrad.apply_Gurobi_projection!(idx, prm, qG, stt, sys)
+    QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
     # write a solution :)
-    soln_dict = quasiGrad.prepare_solution(prm, stt, sys)
-    quasiGrad.write_solution(data_dir*file_name, qG, soln_dict, scr)
+    soln_dict = QuasiGrad.prepare_solution(prm, stt, sys)
+    QuasiGrad.write_solution(data_dir*file_name, qG, soln_dict, scr)
 end
 
 # %% loop over time

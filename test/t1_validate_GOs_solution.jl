@@ -12,15 +12,15 @@ soln      = "scenario_003_solution.json"
 #soln      = "scenario_002_solution.json"
 
 # read and parse the input data
-jsn, prm, idx, sys = quasiGrad.load_and_parse_json(data_dir*file_name);
-qG                 = quasiGrad.initialize_qG(prm)
+jsn, prm, idx, sys = QuasiGrad.load_and_parse_json(data_dir*file_name);
+qG                 = QuasiGrad.initialize_qG(prm)
 qG.eval_grad     = false
 
 # initialize states -- @btime
-cgd, GRB, grd, mgd, scr, stt = quasiGrad.initialize_states(idx, prm, sys);
+cgd, GRB, grd, mgd, scr, stt = QuasiGrad.initialize_states(idx, prm, sys);
 
 # %% -- load the solution
-jsn_soln = quasiGrad.load_json(data_dir*soln)
+jsn_soln = QuasiGrad.load_json(data_dir*soln)
 
 # loop and populate the stt
 #
@@ -104,18 +104,18 @@ end
 
 # %% now, test (hard) constraint violations!
 include("../src/quasiGrad_dual.jl")
-sys = quasiGrad.build_sys(jsn)
+sys = QuasiGrad.build_sys(jsn)
 
-quasiGrad.acline_flows!(grd, idx, prm, qG, stt, sys)
-quasiGrad.xfm_flows!(grd, idx, prm, qG, stt, sys)
-quasiGrad.shunts!(grd, idx, prm, qG, stt)
-quasiGrad.all_device_statuses_and_costs!(grd, prm, qG, stt)
-quasiGrad.device_startup_states!(prm, idx, stt, grd, qG, sys)
-quasiGrad.device_active_powers!(idx, prm, qG, stt, sys)
-quasiGrad.device_reactive_powers!(idx, prm, qG, stt)
-quasiGrad.energy_costs!(grd, prm, qG, stt, sys)
-quasiGrad.energy_penalties!(grd, idx, prm, qG, scr, stt, sys)
-quasiGrad.penalized_device_constraints!(prm, idx, stt, grd, qG, sys)
+QuasiGrad.acline_flows!(grd, idx, prm, qG, stt, sys)
+QuasiGrad.xfm_flows!(grd, idx, prm, qG, stt, sys)
+QuasiGrad.shunts!(grd, idx, prm, qG, stt)
+QuasiGrad.all_device_statuses_and_costs!(grd, prm, qG, stt)
+QuasiGrad.device_startup_states!(prm, idx, stt, grd, qG, sys)
+QuasiGrad.device_active_powers!(idx, prm, qG, stt, sys)
+QuasiGrad.device_reactive_powers!(idx, prm, qG, stt)
+QuasiGrad.energy_costs!(grd, prm, qG, stt, sys)
+QuasiGrad.energy_penalties!(grd, idx, prm, qG, scr, stt, sys)
+QuasiGrad.penalized_device_constraints!(prm, idx, stt, grd, qG, sys)
 
 # %% issues!
 println(maximum(maximum.(values(stt.zhat_mndn))))
@@ -139,5 +139,5 @@ println(maximum(maximum.(values(stt.zhat_qmax_beta))))
 println(maximum(maximum.(values(stt.zhat_qmin_beta))))
 
 # %% Let's pass this solution to Gurobi and see if it find a zero objective!
-quasiGrad.Gurobi_projection!(prm, idx, stt, grd, qG, sys, vst, GRB)
+QuasiGrad.Gurobi_projection!(prm, idx, stt, grd, qG, sys, vst, GRB)
 

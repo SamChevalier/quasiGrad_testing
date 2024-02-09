@@ -1,4 +1,4 @@
-using quasiGrad
+using QuasiGrad
 using Revise
 
 # load the json
@@ -6,34 +6,34 @@ path = "C:/Users/Samuel.HORACE/Dropbox (Personal)/Documents/Julia/GO3_testcases/
 # path = "C:/Users/Samuel.HORACE/Dropbox (Personal)/Documents/Julia/GO3_testcases/C3S1_20221222/D1/C3S1N00600/scenario_001.json"
 
 # call
-jsn = quasiGrad.load_json(path)
+jsn = QuasiGrad.load_json(path)
 
 # %% init
-adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn, false, 1.0);
+adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn, false, 1.0);
 
 # solve
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 # run an ED
-ED = quasiGrad.solve_economic_dispatch(GRB, idx, prm, qG, scr, stt, sys, upd);
-quasiGrad.apply_economic_dispatch_projection!(ED, idx, prm, qG, stt, sys);
+ED = QuasiGrad.solve_economic_dispatch(GRB, idx, prm, qG, scr, stt, sys, upd);
+QuasiGrad.apply_economic_dispatch_projection!(ED, idx, prm, qG, stt, sys);
 
 # ===== new score?
-quasiGrad.dcpf_initialization!(flw, idx, ntk, prm, qG, stt, sys)
+QuasiGrad.dcpf_initialization!(flw, idx, ntk, prm, qG, stt, sys)
 
 # %%
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 # %% let's go!
-quasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd)
 
 # %% intialize lbfgs
-#dpf0, pf_lbfgs, pf_lbfgs_diff, pf_lbfgs_idx, pf_lbfgs_map, pf_lbfgs_step, zpf = quasiGrad.initialize_pf_lbfgs(mgd, prm, stt, sys, upd);
+#dpf0, pf_lbfgs, pf_lbfgs_diff, pf_lbfgs_idx, pf_lbfgs_map, pf_lbfgs_step, zpf = QuasiGrad.initialize_pf_lbfgs(mgd, prm, stt, sys, upd);
 
 #t#ii = :t1
 #qG.cdist_psolve = 1.0
 #residual = zeros(2*sys.nb)
-#quasiGrad.power_flow_residual!(idx, residual, stt, sys, tii)
+#QuasiGrad.power_flow_residual!(idx, residual, stt, sys, tii)
 
 #for tii in prm.ts.time_keys
 #    stt.va[tii] .= 0.0
@@ -41,11 +41,11 @@ quasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG
 
 # %% loop -- lbfgs
 qG.initial_pf_lbfgs_step = 0.1
-dpf0, pf_lbfgs, pf_lbfgs_diff, pf_lbfgs_idx, pf_lbfgs_map, pf_lbfgs_step, zpf = quasiGrad.initialize_pf_lbfgs(mgd, prm, stt, sys, upd);
+dpf0, pf_lbfgs, pf_lbfgs_diff, pf_lbfgs_idx, pf_lbfgs_map, pf_lbfgs_step, zpf = QuasiGrad.initialize_pf_lbfgs(mgd, prm, stt, sys, upd);
 
 for ii in 1:10000
     # take an lbfgs step
-    quasiGrad.solve_pf_lbfgs!(pf_lbfgs, pf_lbfgs_diff, pf_lbfgs_idx, pf_lbfgs_map, pf_lbfgs_step, mgd, prm, qG, stt, upd, zpf)
+    QuasiGrad.solve_pf_lbfgs!(pf_lbfgs, pf_lbfgs_diff, pf_lbfgs_idx, pf_lbfgs_map, pf_lbfgs_step, mgd, prm, qG, stt, upd, zpf)
 
     # save zpf BEFORE updating with the new state
     for tii in prm.ts.time_keys
@@ -53,7 +53,7 @@ for ii in 1:10000
     end
 
     # compute all states and grads
-    quasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
+    QuasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
 
     # print
     zp = round(sum(sum([zpf[:zp][tii] for tii in prm.ts.time_keys])); sigdigits = 3)
@@ -75,54 +75,54 @@ bv
 qG.max_linear_pfs = 1
 
 #ProfileView.@profview
-quasiGrad.solve_linear_pf_with_Gurobi!(idx, ntk, prm, qG, stt, sys)
+QuasiGrad.solve_linear_pf_with_Gurobi!(idx, ntk, prm, qG, stt, sys)
 
 # %% ============= 
 tii = :t1
-@code_warntype quasiGrad.ideal_dispatch!(idx, stt, sys, tii)
+@code_warntype QuasiGrad.ideal_dispatch!(idx, stt, sys, tii)
 
 # %%
-@code_warntype quasiGrad.update_Ybus(idx, ntk, prm, stt, sys, tii)
+@code_warntype QuasiGrad.update_Ybus(idx, ntk, prm, stt, sys, tii)
 
 # %%
-Ybus_real, Ybus_imag = quasiGrad.update_Ybus(idx, ntk, prm, stt, sys, tii)
+Ybus_real, Ybus_imag = QuasiGrad.update_Ybus(idx, ntk, prm, stt, sys, tii)
 
-@code_warntype quasiGrad.build_acpf_Jac_and_pq0(qG, stt, sys, tii, Ybus_real, Ybus_imag);
+@code_warntype QuasiGrad.build_acpf_Jac_and_pq0(qG, stt, sys, tii, Ybus_real, Ybus_imag);
 
 # %% ===========
 #
 tii = :t1
 
 # 1. update the ideal dispatch point (active power)
-quasiGrad.ideal_dispatch!(idx, stt, sys, tii)
+QuasiGrad.ideal_dispatch!(idx, stt, sys, tii)
 
 # 2. update the injection bounds
-quasiGrad.get_injection_bounds!(idx, prm, stt, sys, tii)
+QuasiGrad.get_injection_bounds!(idx, prm, stt, sys, tii)
 
 # 3. update y_bus and Jacobian and bias point
-Ybus_real, Ybus_imag = quasiGrad.update_Ybus(idx, ntk, prm, stt, sys, tii)
+Ybus_real, Ybus_imag = QuasiGrad.update_Ybus(idx, ntk, prm, stt, sys, tii)
 
-# Jac = quasiGrad.build_acpf_Jac_and_pq0(qG, stt, sys, tii, Ybus_real, Ybus_imag)
+# Jac = QuasiGrad.build_acpf_Jac_and_pq0(qG, stt, sys, tii, Ybus_real, Ybus_imag)
 
 # %% =====
 qG.Gurobi_pf_obj = "min_dispatch_distance"
 #qG.Gurobi_pf_obj = "min_dispatch_perturbation"
-Jac = quasiGrad.build_acpf_Jac_and_pq0(qG, stt, sys, tii, Ybus_real, Ybus_imag);
-quasiGrad.solve_linear_pf_with_Gurobi!(Jac, prm, qG, stt, sys, tii);
+Jac = QuasiGrad.build_acpf_Jac_and_pq0(qG, stt, sys, tii, Ybus_real, Ybus_imag);
+QuasiGrad.solve_linear_pf_with_Gurobi!(Jac, prm, qG, stt, sys, tii);
 
 # %% now, solve Newton-based power flow
-pi_p, pi_q, PQidx = quasiGrad.slack_factors(idx, prm, stt, sys, tii)
-Ybus_real, Ybus_imag = quasiGrad.update_Ybus(idx, ntk, prm, stt, sys, tii)
+pi_p, pi_q, PQidx = QuasiGrad.slack_factors(idx, prm, stt, sys, tii)
+Ybus_real, Ybus_imag = QuasiGrad.update_Ybus(idx, ntk, prm, stt, sys, tii)
 residual = zeros(2*sys.nb)
 tii      = :t1
 KP       = 0.0
-KP = quasiGrad.solve_power_flow(grd, idx, KP, pi_p, prm, PQidx, qG, residual, stt, sys, tii, Ybus_real, Ybus_imag)
-quasiGrad.apply_pq_injections!(idx, prm, qG, stt, sys, tii)
+KP = QuasiGrad.solve_power_flow(grd, idx, KP, pi_p, prm, PQidx, qG, residual, stt, sys, tii, Ybus_real, Ybus_imag)
+QuasiGrad.apply_pq_injections!(idx, prm, qG, stt, sys, tii)
 
 # %%
 
-quasiGrad.power_flow_residual!(idx, 0.0, pi_p, residual, stt, sys, tii)
-println(quasiGrad.norm(residual[residual_idx]))
+QuasiGrad.power_flow_residual!(idx, 0.0, pi_p, residual, stt, sys, tii)
+println(QuasiGrad.norm(residual[residual_idx]))
 
 
 # %% ==================
@@ -135,10 +135,10 @@ if test_pf == true
     tii = :t1
     stt.phi[tii] =        0.1*randn(sys.nx)
     stt.tau[tii] = 1.0 .+ 0.1*randn(sys.nx)
-    quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+    QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
     # compute the admittance
-    Ybus_real, Ybus_imag = quasiGrad.update_Ybus(idx, ntk, prm, stt, sys, tii)
+    Ybus_real, Ybus_imag = QuasiGrad.update_Ybus(idx, ntk, prm, stt, sys, tii)
 
     # Does the Ybus work?
     Yb = Ybus_real + im*Ybus_imag
@@ -183,21 +183,21 @@ if test_pf == true
 
     # ------- numerically test jacobian -- keep clipping off!
     for ind in 1:sys.nb
-        Jac = quasiGrad.build_acpf_Jac_and_pq0(qG, stt, sys, tii, Ybus_real, Ybus_imag);
-        quasiGrad.power_flow_residual!(idx, residual, stt, sys, tii)
+        Jac = QuasiGrad.build_acpf_Jac_and_pq0(qG, stt, sys, tii, Ybus_real, Ybus_imag);
+        QuasiGrad.power_flow_residual!(idx, residual, stt, sys, tii)
 
         Jac0      = copy(Jac)
         residial0 = copy(residual)
         eps       = 1e-6
 
         stt.vm[tii][ind] = stt.vm[tii][ind] + eps
-        quasiGrad.update_states_for_distributed_slack_pf!(bit, grd, idx, prm, qG, stt)
-        quasiGrad.power_flow_residual!(idx, residual, stt, sys, tii)
+        QuasiGrad.update_states_for_distributed_slack_pf!(bit, grd, idx, prm, qG, stt)
+        QuasiGrad.power_flow_residual!(idx, residual, stt, sys, tii)
 
         # test
         t1 = (residual - residial0)/eps
         t2 = Jac0[:,ind]
-        @info quasiGrad.norm(t1-t2)
+        @info QuasiGrad.norm(t1-t2)
     end
 end
 
@@ -205,13 +205,13 @@ end
 #
 # initialize residual
 tii = :t1
-pi_p, pi_q, PQidx = quasiGrad.slack_factors(idx, prm, stt, sys, tii)
-Ybus_real, Ybus_imag = quasiGrad.update_Ybus(idx, ntk, prm, stt, sys, tii)
+pi_p, pi_q, PQidx = QuasiGrad.slack_factors(idx, prm, stt, sys, tii)
+Ybus_real, Ybus_imag = QuasiGrad.update_Ybus(idx, ntk, prm, stt, sys, tii)
 residual = zeros(2*sys.nb)
 KP = 0.0
 KQ = 0.0
 
-#quasiGrad.solve_power_flow(grd, idx, KP, KQ, pi_p, pi_q, prm, qG, residual, stt, sys, tii, Ybus_real, Ybus_imag)
+#QuasiGrad.solve_power_flow(grd, idx, KP, KQ, pi_p, pi_q, prm, qG, residual, stt, sys, tii, Ybus_real, Ybus_imag)
 
 #pi_p .= 1.0/sys.nb
 #pi_q .= 1.0/sys.nb
@@ -222,18 +222,18 @@ KQ = 0.0
 x = copy([KP; stt.va[tii][2:end]])
 
 # loop over each bus and compute the residual
-quasiGrad.power_flow_residual!(idx, KP, KQ, pi_p, pi_q, residual, stt, sys, tii)
+QuasiGrad.power_flow_residual!(idx, KP, KQ, pi_p, pi_q, residual, stt, sys, tii)
 
 #  test the residual for termination
-if quasiGrad.norm(residual[1:sys.nb]) < 1e-5
+if QuasiGrad.norm(residual[1:sys.nb]) < 1e-5
     run_pf = false
 else
-    println(quasiGrad.norm(residual[1:sys.nb]))
+    println(QuasiGrad.norm(residual[1:sys.nb]))
     #sleep(0.75)
 
     # update the Jacobian
-    Jac = quasiGrad.build_acpf_Jac(stt, sys, tii, Ybus_real, Ybus_imag)
-    #quasiGrad.transform_acpf_Jac!(Jac, pi_p, pi_q, sys)
+    Jac = QuasiGrad.build_acpf_Jac(stt, sys, tii, Ybus_real, Ybus_imag)
+    #QuasiGrad.transform_acpf_Jac!(Jac, pi_p, pi_q, sys)
     
     Jac = Jac[1:sys.nb, sys.nb+1:end]
     # 2. remove phase from from ref buses and add active power distributed slack
@@ -252,7 +252,7 @@ else
     stt.va[tii][2:end] = x[2:end]
 
     # update the flows and residual and such
-    quasiGrad.update_states_for_distributed_slack_pf!(bit, grd, idx, prm, qG, stt)
+    QuasiGrad.update_states_for_distributed_slack_pf!(bit, grd, idx, prm, qG, stt)
 end
 
 
@@ -276,20 +276,20 @@ pi_p .= 1.0/sys.nb
 pi_q .= 1.0/sys.nb
 
 # loop over each bus and compute the residual
-quasiGrad.power_flow_residual!(idx, KP, KQ, pi_p, pi_q, residual, stt, sys, tii)
-Jac = quasiGrad.build_acpf_Jac(stt, sys, tii, Ybus_real, Ybus_imag)
+QuasiGrad.power_flow_residual!(idx, KP, KQ, pi_p, pi_q, residual, stt, sys, tii)
+Jac = QuasiGrad.build_acpf_Jac(stt, sys, tii, Ybus_real, Ybus_imag)
 
 # %%
 #  test the residual for termination
-if quasiGrad.norm(residual) < 1e-1
+if QuasiGrad.norm(residual) < 1e-1
     run_pf = false
 else
-    println(quasiGrad.norm(residual))
+    println(QuasiGrad.norm(residual))
     #sleep(0.75)
 
     # update the Jacobian
-    Jac = quasiGrad.build_acpf_Jac(stt, sys, tii, Ybus_real, Ybus_imag)
-    quasiGrad.transform_acpf_Jac!(Jac, pi_p, pi_q, sys)
+    Jac = QuasiGrad.build_acpf_Jac(stt, sys, tii, Ybus_real, Ybus_imag)
+    QuasiGrad.transform_acpf_Jac!(Jac, pi_p, pi_q, sys)
 
     # update the state
     KQ = x[1]
@@ -298,22 +298,22 @@ else
     stt.va[tii][2:end] = x[sys.nb+2:end]
 
     # update the flows and residual and such
-    quasiGrad.update_states_for_distributed_slack_pf!(bit, grd, idx, prm, qG, stt)
+    QuasiGrad.update_states_for_distributed_slack_pf!(bit, grd, idx, prm, qG, stt)
 end
 
 
 # %% %%%%%%%%%%%%%%%%%%%%%%%%%
 # initialize residual
 tii = :t1
-pi_p, pi_q, PQidx = quasiGrad.slack_factors(idx, prm, stt, sys, tii)
-Ybus_real, Ybus_imag = quasiGrad.update_Ybus(idx, ntk, prm, stt, sys, tii)
+pi_p, pi_q, PQidx = QuasiGrad.slack_factors(idx, prm, stt, sys, tii)
+Ybus_real, Ybus_imag = QuasiGrad.update_Ybus(idx, ntk, prm, stt, sys, tii)
 residual = zeros(2*sys.nb)
 KP = 0.0
 KQ = 0.0
 
 # %%
-quasiGrad.power_flow_residual!(idx, 0.0, pi_p, residual, stt, sys, tii)
-println(quasiGrad.norm(residual[residual_idx]))
+QuasiGrad.power_flow_residual!(idx, 0.0, pi_p, residual, stt, sys, tii)
+println(QuasiGrad.norm(residual[residual_idx]))
 
 # ==========
 
@@ -331,17 +331,17 @@ x = [stt.vm[tii][PQidx]; KP; stt.va[tii][2:end]]
 println(x[1:3])
 
 # loop over each bus and compute the residual
-quasiGrad.power_flow_residual!(idx, KP, pi_p, residual, stt, sys, tii)
+QuasiGrad.power_flow_residual!(idx, KP, pi_p, residual, stt, sys, tii)
 
 # test the residual for termination
-if quasiGrad.norm(residual[residual_idx]) < 1e-1
+if QuasiGrad.norm(residual[residual_idx]) < 1e-1
     run_pf = false
 else
-    println(quasiGrad.norm(residual[residual_idx]))
+    println(QuasiGrad.norm(residual[residual_idx]))
 
     # update the Jacobian
-    Jac = quasiGrad.build_acpf_Jac(stt, sys, tii, Ybus_real, Ybus_imag)
-    Jac = quasiGrad.transform_acpf_Jac(Jac, pi_p, PQidx, sys)
+    Jac = QuasiGrad.build_acpf_Jac(stt, sys, tii, Ybus_real, Ybus_imag)
+    Jac = QuasiGrad.transform_acpf_Jac(Jac, pi_p, PQidx, sys)
 
     # take a Newton step -- do NOT put the scalar inside the parantheses
     x = x #- 0.01*(Jac\residual[residual_idx])
@@ -352,32 +352,32 @@ else
     stt.va[tii][2:end] = x[(nPQ+2):end]
 
     # update the flows and residual and such
-    quasiGrad.update_states_for_distributed_slack_pf!(bit, grd, idx, prm, qG, stt)
+    QuasiGrad.update_states_for_distributed_slack_pf!(bit, grd, idx, prm, qG, stt)
 end
 
 #println(x)
 # after power flow, we must (1) apply active power updates, and (2)
 
 # %% ========
-pi_p, pi_q, PQidx = quasiGrad.slack_factors(idx, prm, stt, sys, tii)
+pi_p, pi_q, PQidx = QuasiGrad.slack_factors(idx, prm, stt, sys, tii)
 #PQidx = [2]
 
-Ybus_real, Ybus_imag = quasiGrad.update_Ybus(idx, ntk, prm, stt, sys, tii)
+Ybus_real, Ybus_imag = QuasiGrad.update_Ybus(idx, ntk, prm, stt, sys, tii)
 residual = zeros(2*sys.nb)
 residual_idx = [buses;           # => P
                 sys.nb .+ PQidx]  # => Q
 tii = :t1
 KP  = 0.0
 
-KP = quasiGrad.solve_power_flow(grd, idx, KP, pi_p, prm, PQidx, qG, residual, stt, sys, tii, Ybus_real, Ybus_imag)
-quasiGrad.apply_pq_injections!(idx, prm, qG, stt, sys, tii)
+KP = QuasiGrad.solve_power_flow(grd, idx, KP, pi_p, prm, PQidx, qG, residual, stt, sys, tii, Ybus_real, Ybus_imag)
+QuasiGrad.apply_pq_injections!(idx, prm, qG, stt, sys, tii)
 # now, update all device power injections
 
 # now, recomputed the Jacobian and have Gurobi solve a quick linearized power flow
 
 # %%
-quasiGrad.power_flow_residual!(idx, KP, pi_p, residual, stt, sys, tii)
-println(quasiGrad.norm(residual[residual_idx]))
+QuasiGrad.power_flow_residual!(idx, KP, pi_p, residual, stt, sys, tii)
+println(QuasiGrad.norm(residual[residual_idx]))
 
 
 # %% =========== *******************
@@ -389,10 +389,10 @@ pi_q .= 1.0/sys.nb
 
 # %%
 x = copy([KQ; stt.vm[tii][2:end]; KP; stt.va[tii][2:end]])
-quasiGrad.power_flow_residual_kpkq!(idx, KP, KQ, pi_p, pi_q, residual, stt, sys, tii)
-println(quasiGrad.norm(residual[residual_idx]))
+QuasiGrad.power_flow_residual_kpkq!(idx, KP, KQ, pi_p, pi_q, residual, stt, sys, tii)
+println(QuasiGrad.norm(residual[residual_idx]))
 
-Jac = quasiGrad.build_acpf_Jac(stt, sys, tii, Ybus_real, Ybus_imag)
+Jac = QuasiGrad.build_acpf_Jac(stt, sys, tii, Ybus_real, Ybus_imag)
 Jac[sys.nb+1:end, 1         ]  = pi_q
 Jac[1:sys.nb,     1         ] .= 0.0
 Jac[sys.nb+1:end, sys.nb + 1] .= 0.0
@@ -406,20 +406,20 @@ stt.vm[tii][2:end] = x[2:sys.nb]
 KP = x[sys.nb+1]
 stt.va[tii][2:end] = x[sys.nb+2:end]
 
-quasiGrad.update_states_for_distributed_slack_pf!(bit, grd, idx, prm, qG, stt)
+QuasiGrad.update_states_for_distributed_slack_pf!(bit, grd, idx, prm, qG, stt)
 
 # %%
 
-quasiGrad.apply_pq_injections!(idx, prm, qG, stt, sys, tii)
+QuasiGrad.apply_pq_injections!(idx, prm, qG, stt, sys, tii)
 
 # %%
 
-quasiGrad.power_flow_residual!(idx, 0.0, pi_p, residual, stt, sys, tii)
-println(quasiGrad.norm(residual[residual_idx]))
+QuasiGrad.power_flow_residual!(idx, 0.0, pi_p, residual, stt, sys, tii)
+println(QuasiGrad.norm(residual[residual_idx]))
 
 # %%
-quasiGrad.power_flow_residual!(idx, 0.0, pi_p, residual, stt, sys, tii)
-Jac = quasiGrad.build_acpf_Jac(stt, sys, tii, Ybus_real, Ybus_imag)
+QuasiGrad.power_flow_residual!(idx, 0.0, pi_p, residual, stt, sys, tii)
+Jac = QuasiGrad.build_acpf_Jac(stt, sys, tii, Ybus_real, Ybus_imag)
 
 # remove ref bus phase and ref bus active power
 Jac = Jac[:, [1:sys.nb; sys.nb+2:end]]
@@ -430,10 +430,10 @@ x = copy([stt.vm[tii]; stt.va[tii][2:end]])
 x = x - (Jac\residual[2:end])
 stt.vm[tii]        = x[1:sys.nb]
 stt.va[tii][2:end] = x[(sys.nb+1):end]
-quasiGrad.update_states_for_distributed_slack_pf!(bit, grd, idx, prm, qG, stt)
+QuasiGrad.update_states_for_distributed_slack_pf!(bit, grd, idx, prm, qG, stt)
 
-quasiGrad.power_flow_residual!(idx, 0.0, pi_p, residual, stt, sys, tii)
-println(quasiGrad.norm(residual[2:end]))
+QuasiGrad.power_flow_residual!(idx, 0.0, pi_p, residual, stt, sys, tii)
+println(QuasiGrad.norm(residual[2:end]))
 
 # steps
 #1. solve newton
@@ -442,22 +442,22 @@ println(quasiGrad.norm(residual[2:end]))
 
 # %% test linear power flow
 tii = :t1
-plb, pub, qlb, qub = quasiGrad.get_injection_bounds(idx, prm, stt, sys, tii)
+plb, pub, qlb, qub = QuasiGrad.get_injection_bounds(idx, prm, stt, sys, tii)
 
 # %% ============
-Ybus_real, Ybus_imag = quasiGrad.update_Ybus(idx, ntk, prm, stt, sys, tii)
-Jac, pinj0, qinj0 = quasiGrad.build_acpf_Jac(true, stt, sys, tii, Ybus_real, Ybus_imag)
+Ybus_real, Ybus_imag = QuasiGrad.update_Ybus(idx, ntk, prm, stt, sys, tii)
+Jac, pinj0, qinj0 = QuasiGrad.build_acpf_Jac(true, stt, sys, tii, Ybus_real, Ybus_imag)
 
 # %%
-dvm, dva = quasiGrad.solve_linear_pf_with_Gurobi!(Jac, pinj0, plb, prm, pub, qG, qinj0, qlb, qub, stt, sys, tii)
+dvm, dva = QuasiGrad.solve_linear_pf_with_Gurobi!(Jac, pinj0, plb, prm, pub, qG, qinj0, qlb, qub, stt, sys, tii)
 
 # %% try again
 stt.vm[tii]        = stt.vm[tii] + dvm
 stt.va[tii][2:end] = stt.va[tii][2:end] + dva
 
 # %%
-Jac, pinj0, qinj0 = quasiGrad.build_acpf_Jac(true, stt, sys, tii, Ybus_real, Ybus_imag)
-@time dvm, dva = quasiGrad.solve_linear_pf_with_Gurobi!(Jac, pinj0, plb, prm, pub, qG, qinj0, qlb, qub, stt, sys, tii);
+Jac, pinj0, qinj0 = QuasiGrad.build_acpf_Jac(true, stt, sys, tii, Ybus_real, Ybus_imag)
+@time dvm, dva = QuasiGrad.solve_linear_pf_with_Gurobi!(Jac, pinj0, plb, prm, pub, qG, qinj0, qlb, qub, stt, sys, tii);
 
 # %%stt.vm[tii] = stt.vm[tii] + dvm
 # ask Gurobi to solve a linearize power flow
@@ -470,11 +470,11 @@ vm0 = stt.vm[tii]
 va0 = stt.va[tii][2:end-1]
 
 # build and empty the model!
-model = Model(quasiGrad.Gurobi.Optimizer)
+model = Model(QuasiGrad.Gurobi.Optimizer)
 empty!(model)
 
 # quiet down!!!
-quasiGrad.set_optimizer_attribute(model, "OutputFlag", qG.GRB_output_flag)
+QuasiGrad.set_optimizer_attribute(model, "OutputFlag", qG.GRB_output_flag)
 
 # define the variables (single time index)
 @variable(model, x_in[1:(2*sys.nb - 1)])
@@ -507,16 +507,16 @@ for ii in 1:sys.nb
     tmp = @variable(model)
     @constraint(model, dpinj[ii]  <= tmp)
     @constraint(model, -dpinj[ii] <= tmp)
-    quasiGrad.add_to_expression!(obj, tmp)
+    QuasiGrad.add_to_expression!(obj, tmp)
 end
 
 # set the objective
 @objective(model, Min, obj)
 
 # solve
-quasiGrad.optimize!(model)
+QuasiGrad.optimize!(model)
 # println("========================================================")
-println(quasiGrad.termination_status(model),". ",quasiGrad.primal_status(model),". objective value: ", quasiGrad.objective_value(model))
+println(QuasiGrad.termination_status(model),". ",QuasiGrad.primal_status(model),". objective value: ", QuasiGrad.objective_value(model))
 # println("========================================================")
 
 # %% ==============================
@@ -527,7 +527,7 @@ qG.Gurobi_pf_obj            = "min_dispatch_distance"
 qG.compute_pf_injs_with_Jac = true
 
 # build and empty the model!
-model = Model(quasiGrad.Gurobi.Optimizer)
+model = Model(QuasiGrad.Gurobi.Optimizer)
 @info "Running linearized power flow across $(sys.nT) time periods."
 
 # initialize
@@ -536,15 +536,15 @@ run_pf  = true
 pf_cnt  = 0
 
 # 1. update the ideal dispatch point (active power) -- we do this just once
-quasiGrad.ideal_dispatch!(idx, stt, sys, tii)
+QuasiGrad.ideal_dispatch!(idx, stt, sys, tii)
 
 # 2. update the injection bounds (upper and lower P/Q bounds) -- no longer needed
-# quasiGrad.get_injection_bounds!(idx, prm, stt, sys, tii)
+# QuasiGrad.get_injection_bounds!(idx, prm, stt, sys, tii)
 
 # 3. update y_bus and Jacobian and bias point -- this
 #    only needs to be done once per time, since xfm/shunt
 #    values are not changing between iterations
-Ybus_real, Ybus_imag = quasiGrad.update_Ybus(idx, ntk, prm, stt, sys, tii)
+Ybus_real, Ybus_imag = QuasiGrad.update_Ybus(idx, ntk, prm, stt, sys, tii)
 
 # %% loop over pf solves
 
@@ -555,12 +555,12 @@ while run_pf == true
 
     # first, rebuild the jacobian, and update the
     # base points: stt.pinj0, stt.qinj0
-    Jac = quasiGrad.build_acpf_Jac_and_pq0(qG, stt, sys, tii, Ybus_real, Ybus_imag);
+    Jac = QuasiGrad.build_acpf_Jac_and_pq0(qG, stt, sys, tii, Ybus_real, Ybus_imag);
     
     # quiet down!!!
     empty!(model)
     set_silent(model)
-    quasiGrad.set_optimizer_attribute(model, "OutputFlag", qG.GRB_output_flag)
+    QuasiGrad.set_optimizer_attribute(model, "OutputFlag", qG.GRB_output_flag)
 
     # define the variables (single time index)
     @variable(model, x_in[1:(2*sys.nb - 1)])
@@ -690,7 +690,7 @@ while run_pf == true
             tmp = @variable(model)
             @constraint(model, stt.pinj_ideal[bus] - nodal_p[bus] <= tmp)
             @constraint(model, nodal_p[bus] - stt.pinj_ideal[bus] <= tmp)
-            quasiGrad.add_to_expression!(obj, tmp)
+            QuasiGrad.add_to_expression!(obj, tmp)
 
             # voltage regularization
             @constraint(model, -dvm[bus] <= tmp_vm)
@@ -704,8 +704,8 @@ while run_pf == true
         end
 
         # this adds light regularization and causes convergence
-        quasiGrad.add_to_expression!(obj, tmp_vm)
-        quasiGrad.add_to_expression!(obj, tmp_va)
+        QuasiGrad.add_to_expression!(obj, tmp_vm)
+        QuasiGrad.add_to_expression!(obj, tmp_va)
 
     elseif qG.Gurobi_pf_obj == "min_dispatch_perturbation"
         # this finds a solution with minimum movement -- not really needed
@@ -736,18 +736,18 @@ while run_pf == true
     @objective(model, Min, obj)
 
     # solve
-    quasiGrad.optimize!(model)
+    QuasiGrad.optimize!(model)
 
     # take the norm of dv
-    norm_dv = quasiGrad.norm(quasiGrad.value.(dvm))
+    norm_dv = QuasiGrad.norm(QuasiGrad.value.(dvm))
     
     # println("========================================================")
-    println(quasiGrad.termination_status(model),". ", quasiGrad.primal_status(model),". objective value: ", round(quasiGrad.objective_value(model), sigdigits = 5), "dv norm: ", round(norm_dv, sigdigits = 5))
+    println(QuasiGrad.termination_status(model),". ", QuasiGrad.primal_status(model),". objective value: ", round(QuasiGrad.objective_value(model), sigdigits = 5), "dv norm: ", round(norm_dv, sigdigits = 5))
     # println("========================================================")
 
     # now, update the state vector with the soluion
-    stt.vm[tii]        = stt.vm[tii]        + quasiGrad.value.(dvm)
-    stt.va[tii][2:end] = stt.va[tii][2:end] + quasiGrad.value.(dva)
+    stt.vm[tii]        = stt.vm[tii]        + QuasiGrad.value.(dvm)
+    stt.va[tii][2:end] = stt.va[tii][2:end] + QuasiGrad.value.(dva)
 
     # shall we terminate?
     #if (norm_dv < 1e-3) || (pf_cnt == qG.max_linear_pfs)
@@ -790,13 +790,13 @@ qG.pqbal_grad_eps2     = 1e-8
 #  1. transformer phase shift (phi) =======================================================================
 tii     = Symbol("t"*string(Int64(round(rand(1)[1]*sys.nT)))); (tii == :t0 ? tii = :t1 : tii = tii)
 ind     = Int64(round(rand(1)[1]*sys.nx)); (ind == 0 ? ind = 1 : ind = ind)
-quasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
 z0      = sum(stt.zp[tii]) + sum(stt.zq[tii])
 dzdx    = copy(mgd.phi[tii][ind])
 
 # perturb and test
 stt.phi[tii][ind] += epsilon
-quasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
 zp = sum(stt.zp[tii]) + sum(stt.zq[tii])
 dzdx_num = (zp - z0)/epsilon
 println(dzdx)
@@ -805,13 +805,13 @@ println(dzdx_num)
 # %% 2. transformer turns ratio (tau) =======================================================================
 tii     = Symbol("t"*string(Int64(round(rand(1)[1]*sys.nT)))); (tii == :t0 ? tii = :t1 : tii = tii)
 ind     = Int64(round(rand(1)[1]*sys.nx)); (ind == 0 ? ind = 1 : ind = ind)
-quasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
 z0      = sum(stt.zp[tii]) + sum(stt.zq[tii])
 dzdx    = copy(mgd.tau[tii][ind])
 
 # perturb and test
 stt.tau[tii][ind] += epsilon
-quasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
 zp = sum(stt.zp[tii]) + sum(stt.zq[tii])
 
 println("========")
@@ -822,13 +822,13 @@ println(dzdx_num)
 # %% 3. voltage magnitude =======================================================================
 tii     = Symbol("t"*string(Int64(round(rand(1)[1]*sys.nT)))); (tii == :t0 ? tii = :t1 : tii = tii)
 ind     = Int64(round(rand(1)[1]*sys.nb)); (ind == 0 ? ind = 1 : ind = ind)
-quasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
 z0      = sum(stt.zp[tii]) + sum(stt.zq[tii])
 dzdx    = mgd.vm[tii][ind]
 
 # perturb and test
 stt.vm[tii][ind] += epsilon 
-quasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
 zp = sum(stt.zp[tii]) + sum(stt.zq[tii])
 dzdx_num = (zp - z0)/epsilon
 
@@ -838,13 +838,13 @@ println(dzdx_num)
 # %% 4. voltage phase =======================================================================
 tii     = Symbol("t"*string(Int64(round(rand(1)[1]*sys.nT)))); (tii == :t0 ? tii = :t1 : tii = tii)
 ind     = Int64(round(rand(1)[1]*sys.nb)); (ind == 0 ? ind = 1 : ind = ind)
-quasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
 z0      = sum(stt.zp[tii]) + sum(stt.zq[tii])
 dzdx    = mgd.va[tii][ind]
 
 # perturb and test
 stt.va[tii][ind] += epsilon 
-quasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
 zp      = sum(stt.zp[tii]) + sum(stt.zq[tii])
 dzdx_num = (zp - z0)/epsilon
 println(dzdx)
@@ -857,13 +857,13 @@ ind     = Int64(round(rand(1)[1]*sys.nsh)) # -- most have a 0-bs/gs value, so ch
 
 # to ensure we're not tipping over into some new space
 stt.u_step_shunt[tii][ind] = 0.4
-quasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
 z0      = sum(stt.zp[tii]) + sum(stt.zq[tii])
 dzdx  = copy(mgd.u_step_shunt[tii][ind])
 
 # perturb and test
 stt.u_step_shunt[tii][ind] += epsilon 
-quasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
 zp      = sum(stt.zp[tii]) + sum(stt.zq[tii])
 dzdx_num = (zp - z0)/epsilon
 println(dzdx)
@@ -872,13 +872,13 @@ println(dzdx_num)
 # %% 11. p_on
 tii     = Symbol("t"*string(Int64(round(rand(1)[1]*sys.nT)))); (tii == :t0 ? tii = :t1 : tii = tii)
 ind     = Int64(round(rand(1)[1]*sys.ndev)); (ind == 0 ? ind = 1 : ind = ind)
-quasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
 z0      = sum(stt.zp[tii]) + sum(stt.zq[tii])
 dzdx    = copy(mgd.p_on[tii][ind])
 
 # perturb and test
 stt.p_on[tii][ind] += epsilon 
-quasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
 zp      = sum(stt.zp[tii]) + sum(stt.zq[tii])
 dzdx_num = (zp - z0)/epsilon
 println(dzdx)
@@ -887,13 +887,13 @@ println(dzdx_num)
 # %% 11. dev_q
 tii     = Symbol("t"*string(Int64(round(rand(1)[1]*sys.nT)))); (tii == :t0 ? tii = :t1 : tii = tii)
 ind     = Int64(round(rand(1)[1]*sys.ndev)); (ind == 0 ? ind = 1 : ind = ind)
-quasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
 z0      = sum(stt.zp[tii]) + sum(stt.zq[tii])
 dzdx    = copy(mgd.dev_q[tii][ind])
 
 # perturb and test
 stt.dev_q[tii][ind] += epsilon 
-quasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
 zp      = sum(stt.zp[tii]) + sum(stt.zq[tii])
 dzdx_num = (zp - z0)/epsilon
 println(dzdx)

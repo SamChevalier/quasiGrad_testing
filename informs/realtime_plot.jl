@@ -1,6 +1,6 @@
 using Makie
 using GLMakie
-using quasiGrad
+using QuasiGrad
 
 # call plotting tools 
 include("./informs_plotting.jl")
@@ -11,16 +11,14 @@ path = tfp*"C3E3.1_20230629/D1/C3E3N01576D1/scenario_027.json"
 
 # solve ED
 InFile1 = path
-jsn = quasiGrad.load_json(InFile1)
+jsn = QuasiGrad.load_json(InFile1)
 
 # initialize
-adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn)
+adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn)
 
 # solve ed
-quasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 stt0 = deepcopy(stt);
-
-
 
 
 # %% 1. call stt0 and solve
@@ -129,10 +127,10 @@ x_lim = run_adam_and_plot!(ax, fig, z_plt, adm, cgd, ctg, flw, grd, idx, mgd, nt
 
 # %% 2. Project binaries
 qG.print_projection_success = true
-quasiGrad.project!(50.0, idx, prm, qG, stt, sys, upd, final_projection = false)
+QuasiGrad.project!(50.0, idx, prm, qG, stt, sys, upd, final_projection = false)
 
 # %% 3. re-Project binaries
-quasiGrad.project!(50.0, idx, prm, qG, stt, sys, upd, final_projection = false)
+QuasiGrad.project!(50.0, idx, prm, qG, stt, sys, upd, final_projection = false)
 
 # %% 4. re-run adam
 qG.adam_max_time = 60.0
@@ -144,4 +142,4 @@ NewTimeLimitInSeconds = 360.0
 Division              = 1
 NetworkModel          = ":)"
 AllowSwitching        = 0
-quasiGrad.compute_quasiGrad_solution_d1(InFile1, NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)
+QuasiGrad.compute_quasiGrad_solution_d1(InFile1, NewTimeLimitInSeconds, Division, NetworkModel, AllowSwitching; post_process=true)

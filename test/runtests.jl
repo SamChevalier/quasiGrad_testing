@@ -1,6 +1,6 @@
-using quasiGrad
+using QuasiGrad
 using Test
 
-@testset "quasiGrad.jl" begin
+@testset "QuasiGrad.jl" begin
     # Write your tests here.
 end

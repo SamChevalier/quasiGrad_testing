@@ -1,16 +1,16 @@
-using quasiGrad
+using QuasiGrad
 
 # %% identify the data
 InFile1 = "./data/scenario_027.json"
 
 # call the jsn data
-jsn = quasiGrad.load_json(InFile1)
+jsn = QuasiGrad.load_json(InFile1)
 
 # initialize the network 
-adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn, Div=1, hpc_params=false);
+adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn, Div=1, hpc_params=false);
 
 # solve a single time period power flow with adam
-quasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 stt0 = deepcopy(stt);
 
 # %% ============== runs tests here
@@ -67,7 +67,7 @@ qG.alpha_pf_tf[:p_on]   = power_pf_tf/10.0 # downscale active power!!!!
 # bins
 qG.alpha_pf_tf[:u_step_shunt] = bin_pf_tf
 
-quasiGrad.jack_solves_adam_pf!(adm, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd; first_solve = false)
+QuasiGrad.jack_solves_adam_pf!(adm, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd; first_solve = false)
 
 # %% === test the current stepping routine
 using Plots

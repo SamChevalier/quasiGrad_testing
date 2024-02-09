@@ -1,22 +1,22 @@
-using quasiGrad
+using QuasiGrad
 using Revise
 
 #include("./test_functions.jl")
 
 path    = "C:/Users/Samuel.HORACE/Dropbox (Personal)/Documents/Julia/GO3_testcases/C3S1_20221222/C3S1N00600D1/scenario_001.json"
 InFile1 = path
-jsn     = quasiGrad.load_json(InFile1)
+jsn     = QuasiGrad.load_json(InFile1)
 
 # %%
-adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn);
+adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn);
 
 # %%
-@time quasiGrad.acline_flows!(grd, idx, prm, qG, stt, sys)
+@time QuasiGrad.acline_flows!(grd, idx, prm, qG, stt, sys)
 
 # %%
 #@btime 
 
-@btime quasiGrad.acline_flows_st!(bit, grd, idx, msc_im, prm, qG, stt_im, sys)
+@btime QuasiGrad.acline_flows_st!(bit, grd, idx, msc_im, prm, qG, stt_im, sys)
 
 # %%
 @btime stt.acline_pfr[:t1] .= stt.u_on_acline[:t1].*stt.pfr[:t1];
@@ -28,7 +28,7 @@ vv1 = [zeros(sys.nb) for ii in 1:(sys.nT)]
 vv2 = [zeros(sys.nb) for ii in uv]
 
 # %% =======
-msc_im = quasiGrad.Msc(
+msc_im = QuasiGrad.Msc(
     [zeros(sys.nb) for ii in 1:(sys.nT)],
     [zeros(sys.nb) for ii in 1:(sys.nT)],
     [zeros(sys.nb) for ii in 1:(sys.nT)],
@@ -96,7 +96,7 @@ syms =
 
 
 # %% =======
-msc_mut = quasiGrad.MMsc(
+msc_mut = QuasiGrad.MMsc(
     [zeros(sys.nb) for ii in 1:(sys.nT)],
     [zeros(sys.nb) for ii in 1:(sys.nT)],
     [zeros(sys.nb) for ii in 1:(sys.nT)],

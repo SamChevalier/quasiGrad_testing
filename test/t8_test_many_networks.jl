@@ -61,32 +61,32 @@ path = "../GO3_testcases/"*set*dvn*case*nro
 #path = "../GO3_testcases/C3S1_20221222/D1/C3S1N06049/scenario_001.json"
 
 # call
-jsn = quasiGrad.load_json(path)
+jsn = QuasiGrad.load_json(path)
 
 # %% init
-adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn, false, 1.0);
+adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn, false, 1.0);
 
 # %% solve
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 # grb
-quasiGrad.snap_shunts!(true, prm, qG, stt, upd)
-quasiGrad.solve_Gurobi_projection!(idx, prm, qG, stt, sys, upd)
-quasiGrad.apply_Gurobi_projection!(idx, prm, qG, stt, sys)
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.snap_shunts!(true, prm, qG, stt, upd)
+QuasiGrad.solve_Gurobi_projection!(idx, prm, qG, stt, sys, upd)
+QuasiGrad.apply_Gurobi_projection!(idx, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 # soln
-soln_dict = quasiGrad.prepare_solution(prm, stt, sys)
-quasiGrad.write_solution(path, qG, soln_dict, scr)
+soln_dict = QuasiGrad.prepare_solution(prm, stt, sys)
+QuasiGrad.write_solution(path, qG, soln_dict, scr)
 
 # %% write solution, or test solver?
 if action == "just write"
     # call
-    jsn = quasiGrad.load_json(path)
+    jsn = QuasiGrad.load_json(path)
         
     # initialize the system
     adm, cgd, ctb, ctd, flw, grd, idx, mgd, ntk, prm, qG, scr,
-    stt, sys, upd, wct = quasiGrad.base_initialization(jsn, false, 1.0);
+    stt, sys, upd, wct = QuasiGrad.base_initialization(jsn, false, 1.0);
 
     # set some qG params
     qG.pqbal_grad_type   = "standard"
@@ -99,14 +99,14 @@ if action == "just write"
     # qG.pcg_tol = 1e-5
 
     # solve
-    quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
-    quasiGrad.solve_Gurobi_projection!(idx, prm, qG, stt, sys, upd)
-    quasiGrad.apply_Gurobi_projection!(idx, prm, qG, stt, sys)
-    quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+    QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+    QuasiGrad.solve_Gurobi_projection!(idx, prm, qG, stt, sys, upd)
+    QuasiGrad.apply_Gurobi_projection!(idx, prm, qG, stt, sys)
+    QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
     # write
-    soln_dict = quasiGrad.prepare_solution(prm, stt, sys)
-    quasiGrad.write_solution(data_dir*file_name, qG, soln_dict, scr)
+    soln_dict = QuasiGrad.prepare_solution(prm, stt, sys)
+    QuasiGrad.write_solution(data_dir*file_name, qG, soln_dict, scr)
 
 elseif action == "actually solve"
     # solve
@@ -330,7 +330,7 @@ idx.Ts_mnup[dev][tii]
 current_start_time = prm.ts.start_time_dict[tii]
 
 # all other times minus d_min -- note: d_up_min = prm.dev.in_service_time_lb[dev]
-valid_times = (current_start_time - prm.dev.in_service_time_lb[dev] + quasiGrad.eps_time .< prm.ts.start_time) .&& (prm.ts.start_time .< current_start_time)
+valid_times = (current_start_time - prm.dev.in_service_time_lb[dev] + QuasiGrad.eps_time .< prm.ts.start_time) .&& (prm.ts.start_time .< current_start_time)
 t_set       = prm.ts.time_keys[valid_times]
 
 # %%

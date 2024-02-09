@@ -12,51 +12,51 @@ path = "../GO3_testcases/C3S1_20221222/D1/C3S1N00600/scenario_001.json"
 
 # load
 print("jsn: ")
-json_data = quasiGrad.load_json(path);
+json_data = QuasiGrad.load_json(path);
 
-adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn, false, 1.0);
+adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn, false, 1.0);
 
 # %% build the system struct
 print("sys: ")
-@time sys = quasiGrad.build_sys(json_data);
+@time sys = QuasiGrad.build_sys(json_data);
 
 # parse the network elements
 print("dc: ")
-@time dc_prm      = quasiGrad.parse_json_dc(json_data);
+@time dc_prm      = QuasiGrad.parse_json_dc(json_data);
 
 
 print("ctg: ")
-@time ctg_prm     = quasiGrad.parse_json_ctg(json_data);
+@time ctg_prm     = QuasiGrad.parse_json_ctg(json_data);
 
  
 print("bus: ")
-@time bus_prm     = quasiGrad.parse_json_bus(json_data);
+@time bus_prm     = QuasiGrad.parse_json_bus(json_data);
 
 
 print("xfm: ")
-@time xfm_prm     = quasiGrad.parse_json_xfm(json_data);
+@time xfm_prm     = QuasiGrad.parse_json_xfm(json_data);
 
 
 print("shunt: ")
-@time shunt_prm   = quasiGrad.parse_json_shunt(json_data);
+@time shunt_prm   = QuasiGrad.parse_json_shunt(json_data);
 
 
 print("acline: ")
-@time acline_prm  = quasiGrad.parse_json_acline(json_data);
+@time acline_prm  = QuasiGrad.parse_json_acline(json_data);
 
 
 print("dev: ")
-@time device_prm  = quasiGrad.parse_json_device(json_data);
+@time device_prm  = QuasiGrad.parse_json_device(json_data);
 
 # parse violation, and then parse the reserve, which updates vio_prm
 print("vio: ")
-@time reserve_prm, vio_prm = quasiGrad.parse_json_reserve_and_vio(json_data);
+@time reserve_prm, vio_prm = QuasiGrad.parse_json_reserve_and_vio(json_data);
 
 # read the time series data
 print("ts: ")
-@time ts_prm = quasiGrad.parse_json_timeseries(json_data);
+@time ts_prm = QuasiGrad.parse_json_timeseries(json_data);
 
-@time prm = quasiGrad.Param(
+@time prm = QuasiGrad.Param(
     ts_prm,
     dc_prm, 
     ctg_prm, 
@@ -67,31 +67,31 @@ print("ts: ")
     acline_prm, 
     device_prm, 
     reserve_prm);
-@time qG = quasiGrad.initialize_qG(prm);
+@time qG = QuasiGrad.initialize_qG(prm);
 
 print("idx: ")
-@time idx = quasiGrad.initialize_indices(prm, sys);
+@time idx = QuasiGrad.initialize_indices(prm, sys);
 
 # %%
-ProfileView.@profview quasiGrad.build_time_sets(prm, sys);
+ProfileView.@profview QuasiGrad.build_time_sets(prm, sys);
 @time Ts_mndn, Ts_mnup, Ts_sdpc, ps_sdpc_set, Ts_supc,
 ps_supc_set, Ts_sus_jft, Ts_sus_jf, Ts_en_max, 
-Ts_en_min, Ts_su_max = quasiGrad.build_time_sets(prm, sys);
+Ts_en_min, Ts_su_max = QuasiGrad.build_time_sets(prm, sys);
 
 # %%
-@time cgd, GRB, grd, mgd, scr, stt = quasiGrad.initialize_states(idx, prm, sys);
+@time cgd, GRB, grd, mgd, scr, stt = QuasiGrad.initialize_states(idx, prm, sys);
 
 # %% initialize the states which adam will update -- the rest are fixed
-@time adm = quasiGrad.initialize_adam_states(sys);
+@time adm = QuasiGrad.initialize_adam_states(sys);
 
 # %% define the states which adam can/will update, and fix the rest!
-@time upd = quasiGrad.identify_update_states(prm, idx, stt, sys)
+@time upd = QuasiGrad.identify_update_states(prm, idx, stt, sys)
 
 # %% initialize the contingency network structure
-@btime ntk, flw = quasiGrad.initialize_ctg(sys, prm, qG, idx);
+@btime ntk, flw = QuasiGrad.initialize_ctg(sys, prm, qG, idx);
 
 # %% initialize
-adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn, false, 1.0);
+adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn, false, 1.0);
 
 # %% note, the reference bus is always bus #1
 #
@@ -105,11 +105,11 @@ ac_ids = [prm.acline.id; prm.xfm.id ]
 ac_b_params = -[prm.acline.b_sr; prm.xfm.b_sr]
 
 # build the full incidence matrix: E = lines x buses
-E  = quasiGrad.build_incidence(idx, prm, stt, sys)
+E  = QuasiGrad.build_incidence(idx, prm, stt, sys)
 Er = E[:,2:end]
 
 # get the diagonal admittance matrix   => Ybs == "b susceptance"
-Ybs = quasiGrad.spdiagm(ac_b_params)
+Ybs = QuasiGrad.spdiagm(ac_b_params)
 Yb  = E'*Ybs*E
 Ybr = Yb[2:end,2:end]  # use @view ? 
 
@@ -118,7 +118,7 @@ if qG.base_solver == "pcg"
     if sys.nb <= qG.min_buses_for_krylov
         # too few buses -- use LU
         @warn "Not enough buses for Krylov! using LU."
-        Ybr_ChPr = quasiGrad.I
+        Ybr_ChPr = QuasiGrad.I
     else
         @info "Preconditioning is disabled."
         # test for negative reactances
@@ -126,16 +126,16 @@ if qG.base_solver == "pcg"
             # Amrit Pandey: "watch out for negatvive reactance! You will lose
             #                pos-sem-def of the Cholesky preconditioner."
             abs_b   = abs.(ac_b_params)
-            abs_Ybr = (E'*quasiGrad.spdiagm(ac_b_params)*E)[2:end,2:end] 
-            Ybr_ChPr = quasiGrad.CholeskyPreconditioner(abs_Ybr, qG.cutoff_level);
-            #Ybr_ChPr = quasiGrad.I
+            abs_Ybr = (E'*QuasiGrad.spdiagm(ac_b_params)*E)[2:end,2:end] 
+            Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(abs_Ybr, qG.cutoff_level);
+            #Ybr_ChPr = QuasiGrad.I
         else
-            Ybr_ChPr = quasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
-            Ybr_ChPr = quasiGrad.I
+            Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
+            Ybr_ChPr = QuasiGrad.I
         end
     end
 else
-    Ybr_ChPr = quasiGrad.I
+    Ybr_ChPr = QuasiGrad.I
 end
 
 # get the flow matrix
@@ -152,15 +152,15 @@ ctg_params  = Dict(ctg_ii => Vector{Float64}(undef, length(prm.ctg.components[ct
 # should we build the full ctg matrices?
 if qG.build_ctg_full == true
     nac   = sys.nac
-    Ybr_k = Dict(ctg_ii => quasiGrad.spzeros(nac,nac) for ctg_ii in 1:sys.nctg)
+    Ybr_k = Dict(ctg_ii => QuasiGrad.spzeros(nac,nac) for ctg_ii in 1:sys.nctg)
 else
     # build something small of the correct data type
-    Ybr_k = Dict(1 => quasiGrad.spzeros(1,1))
+    Ybr_k = Dict(1 => QuasiGrad.spzeros(1,1))
 end
 
 # %% and/or, should we build the low rank ctg elements?
 if qG.build_ctg_lowrank == true
-    # no need => v_k = Dict(ctg_ii => quasiGrad.spzeros(nac) for ctg_ii in 1:sys.nctg)
+    # no need => v_k = Dict(ctg_ii => QuasiGrad.spzeros(nac) for ctg_ii in 1:sys.nctg)
     # no need => b_k = Dict(ctg_ii => 0.0 for ctg_ii in 1:sys.nctg)
     u_k = Dict(ctg_ii => zeros(sys.nb-1) for ctg_ii in 1:sys.nctg)
     w_k = Dict(ctg_ii => zeros(sys.nac) for ctg_ii in 1:sys.nctg)
@@ -190,7 +190,7 @@ for ctg_ii in 1:sys.nctg
 end
 
 # %%
-C = quasiGrad.cholesky(Ybr);
+C = QuasiGrad.cholesky(Ybr);
 for ctg_ii in 1:sys.nctg
     println(ctg_ii)
     # next, should we build the actual, full ctg matrix?
@@ -225,7 +225,7 @@ for ctg_ii in 1:sys.nctg
         # if v, b saved:
             # u_k[ctg_ii] = Ybr\Array(v_k[ctg_ii])
             # w_k[ctg_ii] = b_k[ctg_ii]*u_k[ctg_ii]/(1+(v_k[ctg_ii]'*u_k[ctg_ii])*b_k[ctg_ii])
-         #quasiGrad.cg!(u_k[ctg_ii], Ybr, Vector(Float64.(v_k)), abstol = qG.pcg_tol, Pl = Ybr_ChPr)
+         #QuasiGrad.cg!(u_k[ctg_ii], Ybr, Vector(Float64.(v_k)), abstol = qG.pcg_tol, Pl = Ybr_ChPr)
         # u_k[ctg_ii] = Ybr\Vector(v_k)
         # u_k[ctg_ii] = C\Vector(v_k)
         u_k_local = C\Vector(v_k)
@@ -239,7 +239,7 @@ for ctg_ii in 1:sys.nctg
         # also, we use ".>" because we only want to include all elements that contribute to meeting the stated accuracy goal
         u_k[ctg_ii][bit_vec] = u_k_local[bit_vec]
         # this is ok, since u_k and w_k have the same sparsity pattern
-        w_k[ctg_ii][bit_vec] = b_k*u_k[ctg_ii][bit_vec]/(1.0+(quasiGrad.dot(v_k,u_k[ctg_ii]))*b_k)
+        w_k[ctg_ii][bit_vec] = b_k*u_k[ctg_ii][bit_vec]/(1.0+(QuasiGrad.dot(v_k,u_k[ctg_ii]))*b_k)
     end
 end
 
@@ -259,7 +259,7 @@ for ctg_ii in 1:sys.nctg
     v_k = Er[ctg_out_ind[ctg_ii][1],:]
     b_k = -ac_b_params[ctg_out_ind[ctg_ii][1]]
     u_k[ctg_ii] = C\Vector(Float64.(v_k))
-    #quasiGrad.cg!(u_k[ctg_ii], Ybr, Vector(Float64.(v_k)), abstol = qG.pcg_tol, Pl=Ybr_ChPr)
+    #QuasiGrad.cg!(u_k[ctg_ii], Ybr, Vector(Float64.(v_k)), abstol = qG.pcg_tol, Pl=Ybr_ChPr)
 end
 
 # %%
@@ -271,22 +271,22 @@ end
 # %%
 
 @time pp = cumsum(u_k[ctg_ii])
-quasiGrad.plot(sort(abs.(u_k[253].^2)),yaxis = :log)
+QuasiGrad.plot(sort(abs.(u_k[253].^2)),yaxis = :log)
 
 
 # %%
 qG.cutoff_level = 25
-Ybr_ChPr = quasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
+Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
 
 # %%
-vv0 = quasiGrad.spzeros(100000)
+vv0 = QuasiGrad.spzeros(100000)
 vv1 = zeros(100000)
 vv2 = randn(100000)
 vv3 = randn(100000)
 
-@time quasiGrad.dot(vv1,vv0);
-@time quasiGrad.dot(vv1,vv2);
-@time quasiGrad.dot(vv3,vv2);
+@time QuasiGrad.dot(vv1,vv0);
+@time QuasiGrad.dot(vv1,vv2);
+@time QuasiGrad.dot(vv3,vv2);
 @time vv1'*vv2;
 
 # %%
@@ -298,7 +298,7 @@ u_k[ctg_ii] .= 0.0
 vk = Vector(Float64.(v_k))
 cc = copy(u_k[ctg_ii])
 
-@time quasiGrad.cg!(cc, Ybr, vk, abstol = qG.pcg_tol, Pl=Ybr_ChPr);
+@time QuasiGrad.cg!(cc, Ybr, vk, abstol = qG.pcg_tol, Pl=Ybr_ChPr);
 @time tt = Ybr\Vector(v_k);
 
 # %% initialize ctg state
@@ -335,19 +335,19 @@ xfm_phi_scalars = Dict(bus => ac_b_params[xfm_at_bus[bus] .+ sys.nl].*sign.(xfm_
 # %%
 abstol = 0.001
 bb = Float64.(Vector(v_k))
-t1 = quasiGrad.cg(Ybr, bb, abstol = qG.pcg_tol);
+t1 = QuasiGrad.cg(Ybr, bb, abstol = qG.pcg_tol);
 
-vv = b_k*t1/(1.0+(quasiGrad.dot(v_k,t1))*b_k)
+vv = b_k*t1/(1.0+(QuasiGrad.dot(v_k,t1))*b_k)
 
 # %%
 t2 = Ybr\Vector(v_k);
 
 # %%
 c = randn(6048)
-@btime quasiGrad.dot(v_k,c);
+@btime QuasiGrad.dot(v_k,c);
 
 v_kf = Float64.(Vector(v_k))
-@btime quasiGrad.dot(v_k,c);
+@btime QuasiGrad.dot(v_k,c);
 
 # %%
 @btime Float64.(v_k);
@@ -357,15 +357,15 @@ v_kf = Float64.(Vector(v_k))
 qG.cutoff_level = 50
 ctg_ii   = 15
 v_k      = Er[ctg_out_ind[ctg_ii][1],:]
-Ybr_ChPr = quasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
-C        = quasiGrad.cholesky(Ybr);
+Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
+C        = QuasiGrad.cholesky(Ybr);
 
 # vf = Float64.(v_k)
 #@time v_kk = Vector(Float64.(v_k))
 v_kk = randn(6048)
 qG.pcg_tol = 0.0001
-# @time quasiGrad.cg(Ybr, v_kk, abstol = qG.pcg_tol);
-@time t1 = quasiGrad.cg(Ybr, v_kk, abstol = qG.pcg_tol, Pl = Ybr_ChPr);
+# @time QuasiGrad.cg(Ybr, v_kk, abstol = qG.pcg_tol);
+@time t1 = QuasiGrad.cg(Ybr, v_kk, abstol = qG.pcg_tol, Pl = Ybr_ChPr);
 @time t2 = Ybr\v_kk;
 @time t3 = C\v_kk;
 
@@ -375,12 +375,12 @@ qG.pcg_tol = 0.005
 vv  = randn(6048)
 qG.pcg_tol = 10.0
 xx = zeros(6048)
-@time quasiGrad.cg!(xx, Ybr, vv, abstol = qG.pcg_tol);
+@time QuasiGrad.cg!(xx, Ybr, vv, abstol = qG.pcg_tol);
 @time Ybr\vv;
 
 # %%
 qG.pcg_tol = 2.0
-t1 = quasiGrad.cg(Ybr, vv, abstol = qG.pcg_tol);
+t1 = QuasiGrad.cg(Ybr, vv, abstol = qG.pcg_tol);
 t2 = Ybr\vv;
 
 plot(t1)
@@ -389,19 +389,19 @@ plot!(t2)
 
 # %% ==================
 qG.cutoff_level = 15
-Ybr_ChPr = quasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
+Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
 #v_kk = randn(6048)
 qG.pcg_tol = 0.001
-# @time quasiGrad.cg(Ybr, v_kk, abstol = qG.pcg_tol);
-@time t1  = quasiGrad.cg(Ybr, v_kk, abstol = qG.pcg_tol, Pl = Ybr_ChPr);
+# @time QuasiGrad.cg(Ybr, v_kk, abstol = qG.pcg_tol);
+@time t1  = QuasiGrad.cg(Ybr, v_kk, abstol = qG.pcg_tol, Pl = Ybr_ChPr);
 @time t1p = Ybr_ChPr\v_kk;
 
-r = quasiGrad.norm(Ybr*t1 - v_kk)
+r = QuasiGrad.norm(Ybr*t1 - v_kk)
 
 # %%
 max_error = 0.01
 
-quasiGrad.norm([1,1,1])
+QuasiGrad.norm([1,1,1])
 
 # %%
 @time t2 = Ybr\v_kk;
@@ -409,13 +409,13 @@ quasiGrad.norm([1,1,1])
 
 # %%
 #A = randn(500,500)
-#A = A + A' + 100*quasiGrad.I
-#A  = quasiGrad.sprand(100, 100, 0.25)
-#A  = A + A' + 10*quasiGrad.I
-p  = quasiGrad.CholeskyPreconditioner(A, 53);
-A_approx =  ((p.ldlt.L + quasiGrad.I)*quasiGrad.sparse(quasiGrad.diagm(p.ldlt.D))*(p.ldlt.L' + quasiGrad.I))
+#A = A + A' + 100*QuasiGrad.I
+#A  = QuasiGrad.sprand(100, 100, 0.25)
+#A  = A + A' + 10*QuasiGrad.I
+p  = QuasiGrad.CholeskyPreconditioner(A, 53);
+A_approx =  ((p.ldlt.L + QuasiGrad.I)*QuasiGrad.sparse(QuasiGrad.diagm(p.ldlt.D))*(p.ldlt.L' + QuasiGrad.I))
 
-quasiGrad.norm(A_approx - A[p.ldlt.P, p.ldlt.P])
+QuasiGrad.norm(A_approx - A[p.ldlt.P, p.ldlt.P])
 
 
 # %%
@@ -423,11 +423,11 @@ quasiGrad.norm(A_approx - A[p.ldlt.P, p.ldlt.P])
 
 # %%
 A = randn(10,10)
-A = A + A' + 100.0*quasiGrad.I
-C = quasiGrad.cholesky(A);
+A = A + A' + 100.0*QuasiGrad.I
+C = QuasiGrad.cholesky(A);
 
 # %%
-zs = quasiGrad.sprand(100000,0.01)
+zs = QuasiGrad.sprand(100000,0.01)
 z  = randn(100000)
 
 @btime z-zs

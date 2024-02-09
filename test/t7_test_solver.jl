@@ -1,4 +1,4 @@
-using quasiGrad
+using QuasiGrad
 using Plots
 include("../src/scripts/solver.jl")
 

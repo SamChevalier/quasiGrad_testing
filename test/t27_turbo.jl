@@ -1,16 +1,16 @@
-using quasiGrad
+using QuasiGrad
 using Revise
 
 # files ===
 path = "C:/Users/Samuel.HORACE/Dropbox (Personal)/Documents/Julia/GO3_testcases/C3S1_20221222/C3S1N01576D1/scenario_001.json"
 path = "C:/Users/Samuel.HORACE/Dropbox (Personal)/Documents/Julia/GO3_testcases/C3E3.1_20230629/D1/C3E3N04224D1/scenario_131.json"
 
-jsn  = quasiGrad.load_json(path)
+jsn  = QuasiGrad.load_json(path)
 
 # initialize
-adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn, perturb_states=false);
+adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn, perturb_states=false);
 
-quasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 stt0 = deepcopy(stt)
 qG.num_threads = 10
 
@@ -18,71 +18,71 @@ qG.num_threads = 10
 GC.gc()
 
 print("t1: ")
-@btime quasiGrad.flush_gradients!(grd, mgd, prm, qG, sys)
+@btime QuasiGrad.flush_gradients!(grd, mgd, prm, qG, sys)
 
 print("t2: ")
-@btime quasiGrad.clip_all!(prm, qG, stt, sys)
+@btime QuasiGrad.clip_all!(prm, qG, stt, sys)
 
 print("t3: ")
-@btime quasiGrad.acline_flows!(grd, idx, prm, qG, stt, sys)
+@btime QuasiGrad.acline_flows!(grd, idx, prm, qG, stt, sys)
 
 print("t4: ")
-@btime quasiGrad.xfm_flows!(grd, idx, prm, qG, stt, sys)
+@btime QuasiGrad.xfm_flows!(grd, idx, prm, qG, stt, sys)
 
 print("t5: ")
-@btime quasiGrad.shunts!(grd, idx, prm, qG, stt)
+@btime QuasiGrad.shunts!(grd, idx, prm, qG, stt)
 
 print("t6: ")
-@btime quasiGrad.all_device_statuses_and_costs!(grd, prm, qG, stt)
+@btime QuasiGrad.all_device_statuses_and_costs!(grd, prm, qG, stt)
 
 print("t7: ")
-@btime quasiGrad.device_startup_states!(grd, idx, mgd, prm, qG, stt, sys)
+@btime QuasiGrad.device_startup_states!(grd, idx, mgd, prm, qG, stt, sys)
 
 print("t8a: ")
-@btime quasiGrad.device_active_powers!(idx, prm, qG, stt, sys)
+@btime QuasiGrad.device_active_powers!(idx, prm, qG, stt, sys)
 
 print("t8b: ")
-@btime quasiGrad.device_reactive_powers!(idx, prm, qG, stt)
+@btime QuasiGrad.device_reactive_powers!(idx, prm, qG, stt)
 
 print("t9: ")
-@btime quasiGrad.energy_costs!(grd, prm, qG, stt, sys)
+@btime QuasiGrad.energy_costs!(grd, prm, qG, stt, sys)
 
 print("t10: ")
-@btime quasiGrad.energy_penalties!(grd, idx, prm, qG, scr, stt, sys)
+@btime QuasiGrad.energy_penalties!(grd, idx, prm, qG, scr, stt, sys)
 
 # %%
 print("t11: ")
-@btime quasiGrad.penalized_device_constraints!(grd, idx, mgd, prm, qG, scr, stt, sys)
+@btime QuasiGrad.penalized_device_constraints!(grd, idx, mgd, prm, qG, scr, stt, sys)
 
 # %%
 
 print("t12: ")
-@btime quasiGrad.device_reserve_costs!(prm, qG, stt)
+@btime QuasiGrad.device_reserve_costs!(prm, qG, stt)
 
 print("t13: ")
-@btime quasiGrad.power_balance!(grd, idx, prm, qG, stt, sys)
+@btime QuasiGrad.power_balance!(grd, idx, prm, qG, stt, sys)
 
 print("t14: ")
-@btime quasiGrad.reserve_balance!(idx, prm, qG, stt, sys)
+@btime QuasiGrad.reserve_balance!(idx, prm, qG, stt, sys)
 
 # %%
 print("t15: ")
 ntk.s_max .= 100000.0
-@time quasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+@time QuasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 # %%
 print("t16: ")
-@btime quasiGrad.score_zt!(idx, prm, qG, scr, stt)
+@btime QuasiGrad.score_zt!(idx, prm, qG, scr, stt)
 
 print("t17: ")
-@btime quasiGrad.score_zbase!(qG, scr)
+@btime QuasiGrad.score_zbase!(qG, scr)
 
 print("t18: ")
-@btime quasiGrad.score_zms!(scr)
+@btime QuasiGrad.score_zms!(scr)
 
 # %%
 
 print("t19: ")
-@btime quasiGrad.master_grad!(cgd, grd, idx, mgd, prm, qG, stt, sys)
+@btime QuasiGrad.master_grad!(cgd, grd, idx, mgd, prm, qG, stt, sys)
 println("")
 
 # %%
@@ -91,53 +91,53 @@ v2 = randn(10)
 v3 = randn(10)
 
 # %%
-quasiGrad.@turbo v1 .= v3.*v3 .+ v2
+QuasiGrad.@turbo v1 .= v3.*v3 .+ v2
 
 # %%
-quasiGrad.@turbo stt.cos_ftp[tii] .= 2.2.*quasiGrad.LoopVectorization.pow_fast.(stt.va_fr[tii] .- stt.va_to[tii])
+QuasiGrad.@turbo stt.cos_ftp[tii] .= 2.2.*QuasiGrad.LoopVectorization.pow_fast.(stt.va_fr[tii] .- stt.va_to[tii])
 
 # %%
 
-quasiGrad.@turbo v1 .= 1.1 .* quasiGrad.LoopVectorization.pow_fast.(v3, 2)
+QuasiGrad.@turbo v1 .= 1.1 .* QuasiGrad.LoopVectorization.pow_fast.(v3, 2)
 
 # %% ===
 print("t20: ")
-@btime quasiGrad.adam!(adm, mgd, prm, qG, stt, upd)
+@btime QuasiGrad.adam!(adm, mgd, prm, qG, stt, upd)
 println("")
 
 # %%
-@code_warntype quasiGrad.adam!(adm, mgd, prm, qG, stt, upd)
+@code_warntype QuasiGrad.adam!(adm, mgd, prm, qG, stt, upd)
 
 # %% === === 
 ntk.s_max .= 1.0
 qG.eval_grad = true
 GC.gc()
 
-@btime quasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+@btime QuasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 # %%
 qG.ctg_adam_counter         = 0   
 qG.ctg_solve_frequency      = 3   
 qG.always_solve_ctg         = false
-@time quasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
-@time quasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
-@time quasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
-@time quasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
-@time quasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+@time QuasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+@time QuasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+@time QuasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+@time QuasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+@time QuasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 # %%
 s = 0
 b = prm.ts.time_keys
-quasiGrad.@turbo for ii in eachindex(b)
+QuasiGrad.@turbo for ii in eachindex(b)
     s += ii
 end
 
 # %%
-quasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 
 # %%
-f1() = quasiGrad.mul!(ctg.pflow_k[thrID], ntk.Yfr, ctg.theta_k[thrID])
+f1() = QuasiGrad.mul!(ctg.pflow_k[thrID], ntk.Yfr, ctg.theta_k[thrID])
 f2() = ctg.pflow_k[thrID] .= ntk.Yfr*ctg.theta_k[thrID]
 # %%
 @btime f1()
@@ -146,24 +146,24 @@ f2() = ctg.pflow_k[thrID] .= ntk.Yfr*ctg.theta_k[thrID]
 # %%
 a = randn(100000)
 b = randn(100000)
-f1() = quasiGrad.dot(a, b)
-f2() = quasiGrad.@turbo quasiGrad.dot(a, b)
-f3() = @fastmath quasiGrad.@turbo quasiGrad.dot(a, b)
+f1() = QuasiGrad.dot(a, b)
+f2() = QuasiGrad.@turbo QuasiGrad.dot(a, b)
+f3() = @fastmath QuasiGrad.@turbo QuasiGrad.dot(a, b)
 
 @btime f1()
 @btime f2()
 @btime f3()
 
 # %% initialize
-adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn, perturb_states=false);
+adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn, perturb_states=false);
 
 # %% run copper plate ED
-quasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 stt0 = deepcopy(stt)
 qG.num_threads = 10
 
 # %% ===============
-@btime quasiGrad.acline_flows!(grd, idx, prm, qG, stt, sys)
+@btime QuasiGrad.acline_flows!(grd, idx, prm, qG, stt, sys)
 
 
 
@@ -234,24 +234,24 @@ tii = Int8(1)
 # %%
 #@btime stt.pfr[tii] .= (g_sr.+g_fr).*stt.vff[tii] .+ (.-g_sr.*stt.cos_ftp[tii] .- b_sr.*stt.sin_ftp[tii]).*stt.vft[tii]
 @btime stt.pfr[tii] .= (g_sr.+g_fr).*stt.vff[tii] .+ (.-g_sr.*stt.cos_ftp[tii] .- b_sr.*stt.sin_ftp[tii]).*stt.vft[tii];
-@btime quasiGrad.@turbo stt.pfr[tii] .= (g_sr.+g_fr).*stt.vff[tii] .+ (.-g_sr.*stt.cos_ftp[tii] .- b_sr.*stt.sin_ftp[tii]).*stt.vft[tii];
+@btime QuasiGrad.@turbo stt.pfr[tii] .= (g_sr.+g_fr).*stt.vff[tii] .+ (.-g_sr.*stt.cos_ftp[tii] .- b_sr.*stt.sin_ftp[tii]).*stt.vft[tii];
 
 # %%
-@btime quasiGrad.@turbo stt.cos_ftp[tii]  .= .+ .-(va_fr .- va_to)
+@btime QuasiGrad.@turbo stt.cos_ftp[tii]  .= .+ .-(va_fr .- va_to)
 
 # %%
-@btime quasiGrad.acline_flows!(grd, idx, prm, qG, stt, sys);
+@btime QuasiGrad.acline_flows!(grd, idx, prm, qG, stt, sys);
 
 # %%
 
-@time quasiGrad.acline_flows!(grd, idx, prm, qG, stt, sys);
+@time QuasiGrad.acline_flows!(grd, idx, prm, qG, stt, sys);
 
 # %%
-quasiGrad.xfm_flows!(grd, idx, prm, qG, stt, sys)
+QuasiGrad.xfm_flows!(grd, idx, prm, qG, stt, sys)
 
 # %%
-quasiGrad.@batch per=core for tii in prm.ts.time_keys
-#quasiGrad.@floop quasiGrad.ThreadedEx(basesize = qG.nT ÷ qG.num_threads) for tii in prm.ts.time_keys
+QuasiGrad.@batch per=core for tii in prm.ts.time_keys
+#QuasiGrad.@floop QuasiGrad.ThreadedEx(basesize = qG.nT ÷ qG.num_threads) for tii in prm.ts.time_keys
       println(Threads.threadid())
 end
 
@@ -259,23 +259,23 @@ end
 tii = Int8(1)
 vm_fr = @view stt.vm[tii][idx.acline_fr_bus]
 
-quasiGrad.@turbo vm_fr.^2
+QuasiGrad.@turbo vm_fr.^2
 
 # %%
-@btime quasiGrad.master_grad_zs_acline!(tii, idx, grd, mgd, qG, stt, sys)
+@btime QuasiGrad.master_grad_zs_acline!(tii, idx, grd, mgd, qG, stt, sys)
 
 # %%
-@btime quasiGrad.master_grad_zs_xfm!(tii, idx, grd, mgd, qG, stt, sys)
+@btime QuasiGrad.master_grad_zs_xfm!(tii, idx, grd, mgd, qG, stt, sys)
 
 # %%
-@btime quasiGrad.master_grad_zp!(tii, prm, idx, grd, mgd, sys, run_devs = true)
+@btime QuasiGrad.master_grad_zp!(tii, prm, idx, grd, mgd, sys, run_devs = true)
 
 # %%
 
-@btime quasiGrad.master_grad_zq!(tii, prm, idx, grd, mgd, sys)
+@btime QuasiGrad.master_grad_zq!(tii, prm, idx, grd, mgd, sys)
 # %%
 tii = Int8(1)
-quasiGrad.@turbo for ln in 1:sys.nl
+QuasiGrad.@turbo for ln in 1:sys.nl
       # see binaries at the bottom
       #
       # update the master grad -- pfr
@@ -330,8 +330,8 @@ d = zeros(100000)
 
 @btime d .= sqrt.(a)
 @btime @fastmath d .= sqrt.(a)
-@btime d .= quasiGrad.LoopVectorization.sqrt_fast.(a)
-@btime quasiGrad.@turbo d .= quasiGrad.LoopVectorization.sqrt_fast.(a)
+@btime d .= QuasiGrad.LoopVectorization.sqrt_fast.(a)
+@btime QuasiGrad.@turbo d .= QuasiGrad.LoopVectorization.sqrt_fast.(a)
 
 # %%
 f() =  @fastmath @inbounds p_slack = 
@@ -354,11 +354,11 @@ ff() = @inbounds sum(stt.dev_p[tii][pr] for pr in idx.pr_devs)
 @time ff()
 
 # %%
-E, Efr, Eto = quasiGrad.build_incidence(idx, prm, stt, sys)
+E, Efr, Eto = QuasiGrad.build_incidence(idx, prm, stt, sys)
 Er = E[:,2:end]
 ErT = copy(Er')
 
-u_k = [zeros(sys.nb-1) for ctg_ii in 1:sys.nctg] # Dict(ctg_ii => zeros(sys.nb-1) for ctg_ii in 1:sys.nctg) # Dict(ctg_ii => quasiGrad.spzeros(sys.nb-1) for ctg_ii in 1:sys.nctg)
+u_k = [zeros(sys.nb-1) for ctg_ii in 1:sys.nctg] # Dict(ctg_ii => zeros(sys.nb-1) for ctg_ii in 1:sys.nctg) # Dict(ctg_ii => QuasiGrad.spzeros(sys.nb-1) for ctg_ii in 1:sys.nctg)
 g_k = zeros(sys.nctg) # => Dict(ctg_ii => 0.0 for ctg_ii in 1:sys.nctg)
 z_k = [zeros(sys.nac) for ctg_ii in 1:sys.nctg]
 
@@ -380,7 +380,7 @@ for ctg_ii in 1:sys.nctg
 end
 
 function functt()
-    quasiGrad.@floop quasiGrad.ThreadedEx(basesize = sys.nctg ÷ qG.num_threads) for ctg_ii in 1:sys.nctg
+    QuasiGrad.@floop QuasiGrad.ThreadedEx(basesize = sys.nctg ÷ qG.num_threads) for ctg_ii in 1:sys.nctg
     # this code is optimized -- see above for comments!!!
         @fastmath u_k[ctg_ii] .= Ybr_Ch\Er[ctg_out_ind[ctg_ii][1],:]
     end
@@ -400,10 +400,10 @@ LinearAlgebra.ldiv!(u_k[1], Ybr_Ch, Er[ctg_out_ind[1][1],:])
 path = tfp*"C3S4X_20230809/D2/C3S4N00073D2/scenario_997.json"
 # path = tfp*"C3S4X_20230809/D1/C3S4N00617D1/scenario_963.json"
 InFile1 = path
-jsn = quasiGrad.load_json(InFile1)
+jsn = QuasiGrad.load_json(InFile1)
 
 # ========
-adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn)
+adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn)
 
 for tii in prm.ts.time_keys
     stt.vm[tii] .= 1.0
@@ -411,7 +411,7 @@ for tii in prm.ts.time_keys
     lbf.step[:step][tii] = 0.1
 end
 
-quasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 stt0 = deepcopy(stt);
 
 # %%
@@ -421,35 +421,35 @@ qG.eval_grad = true
 
 # %%
 qG.num_lbfgs_steps = 100
-quasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd)
 
 # %%
 qG.max_linear_pfs       = 25
 qG.max_linear_pfs_total = 25
-xi, par = quasiGrad.solve_parallel_linear_pf_with_Gurobi!(flw, grd, idx, ntk, prm, qG, stt, sys);
+xi, par = QuasiGrad.solve_parallel_linear_pf_with_Gurobi!(flw, grd, idx, ntk, prm, qG, stt, sys);
 
 
 # %%
-@btime emergency_stop = quasiGrad.solve_pf_lbfgs!(lbf, mgd, prm, qG, stt, upd);
+@btime emergency_stop = QuasiGrad.solve_pf_lbfgs!(lbf, mgd, prm, qG, stt, upd);
 
-# %% quasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+# %% QuasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 stt = deepcopy(stt0);
 
 qG.max_pf_dx            = 1e-4
 qG.max_linear_pfs       = 25
 qG.max_linear_pfs_total = 25
-quasiGrad.dcpf_initialization!(flw, idx, ntk, prm, qG, stt, sys)
+QuasiGrad.dcpf_initialization!(flw, idx, ntk, prm, qG, stt, sys)
 
 # %%
 qG.max_linear_pfs       = 25
 qG.max_linear_pfs_total = 25
-xi, par = quasiGrad.solve_parallel_linear_pf_with_Gurobi!(flw, grd, idx, ntk, prm, qG, stt, sys);
+xi, par = QuasiGrad.solve_parallel_linear_pf_with_Gurobi!(flw, grd, idx, ntk, prm, qG, stt, sys);
 
 # %%
 stt = deepcopy(stt0);
 qG.num_lbfgs_steps = 250
 
-quasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd)
 # %%
 stt0 = deepcopy(stt);
 
@@ -460,14 +460,14 @@ qG.max_pf_dx            = 1e-4
 qG.max_linear_pfs       = 10
 qG.max_linear_pfs_total = 10
 
-xi, par = quasiGrad.solve_parallel_linear_pf_with_Gurobi!(flw, grd, idx, ntk, prm, qG, stt, sys);
+xi, par = QuasiGrad.solve_parallel_linear_pf_with_Gurobi!(flw, grd, idx, ntk, prm, qG, stt, sys);
 
 # %% ==============
 
 
 #include_sus = true
-#quasiGrad.solve_economic_dispatch!(idx, prm, qG, scr, stt, sys, upd, include_sus_in_ed=include_sus)
-#quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys) 
+#QuasiGrad.solve_economic_dispatch!(idx, prm, qG, scr, stt, sys, upd, include_sus_in_ed=include_sus)
+#QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys) 
 
 zp = sum(sum(stt.zp[tii]) for tii in prm.ts.time_keys)
 zq = sum(sum(stt.zq[tii]) for tii in prm.ts.time_keys)
@@ -475,11 +475,11 @@ println(zq)
 println(zp)
 # %% ================
 
-quasiGrad.dcpf_initialization!(flw, idx, ntk, prm, qG, stt, sys)
+QuasiGrad.dcpf_initialization!(flw, idx, ntk, prm, qG, stt, sys)
 
 # %% 
-quasiGrad.apply_q_injections!(idx, prm, qG, stt, sys)
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys) 
+QuasiGrad.apply_q_injections!(idx, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys) 
 zp = sum(sum(stt.zp[tii]) for tii in prm.ts.time_keys)
 zq = sum(sum(stt.zq[tii]) for tii in prm.ts.time_keys)
 println(zq)
@@ -607,17 +607,17 @@ dcto_qub = prm.dc.qdc_to_ub
 
 # %% =============
 
-quasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys) 
+QuasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys) 
 
 zp = sum(sum(stt.zp[tii]) for tii in prm.ts.time_keys)
 zq = sum(sum(stt.zq[tii]) for tii in prm.ts.time_keys)
 println(zp+zq)
 
 
-quasiGrad.dcpf_initialization!(flw, idx, ntk, prm, qG, stt, sys)
-#quasiGrad.apply_q_injections!(idx, prm, qG, stt, sys)
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys) 
+QuasiGrad.dcpf_initialization!(flw, idx, ntk, prm, qG, stt, sys)
+#QuasiGrad.apply_q_injections!(idx, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys) 
 zp = sum(sum(stt.zp[tii]) for tii in prm.ts.time_keys)
 zq = sum(sum(stt.zq[tii]) for tii in prm.ts.time_keys)
 println(zp+zq)
@@ -649,49 +649,49 @@ load_solve_project_write(path, solution_file::String)
 path = tfp*"C3S4X_20230809/D2/C3S4N00073D2/scenario_997.json"
 
 InFile1 = path
-jsn = quasiGrad.load_json(InFile1)
+jsn = QuasiGrad.load_json(InFile1)
 
-adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn)
+adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn)
 
-quasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
-quasiGrad.dcpf_initialization!(flw, idx, ntk, prm, qG, stt, sys)
+QuasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.dcpf_initialization!(flw, idx, ntk, prm, qG, stt, sys)
 
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys) 
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys) 
 
 zp = sum(sum(stt.zp[tii]) for tii in prm.ts.time_keys)
 zq = sum(sum(stt.zq[tii]) for tii in prm.ts.time_keys)
 println(zp+zq)
 
 
-quasiGrad.dcpf_initialization!(flw, idx, ntk, prm, qG, stt, sys)
-quasiGrad.apply_q_injections!(idx, prm, qG, stt, sys)
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys) 
+QuasiGrad.dcpf_initialization!(flw, idx, ntk, prm, qG, stt, sys)
+QuasiGrad.apply_q_injections!(idx, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys) 
 zp = sum(sum(stt.zp[tii]) for tii in prm.ts.time_keys)
 zq = sum(sum(stt.zq[tii]) for tii in prm.ts.time_keys)
 println(zp+zq)
 
 # %%
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys) 
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys) 
 
-quasiGrad.score_solve_pf!(lbf, prm, stt)
+QuasiGrad.score_solve_pf!(lbf, prm, stt)
 zp = sum(lbf.zpf[:zp][tii] for tii in prm.ts.time_keys)
 zq = sum(lbf.zpf[:zq][tii] for tii in prm.ts.time_keys)
 println(zq)
 
 # %% ===
 
-quasiGrad.power_balance!(grd, idx, prm, qG, stt, sys)
+QuasiGrad.power_balance!(grd, idx, prm, qG, stt, sys)
 
 # %%
-quasiGrad.score_solve_pf!(lbf, prm, stt)
+QuasiGrad.score_solve_pf!(lbf, prm, stt)
 zp = sum(lbf.zpf[:zp][tii] for tii in prm.ts.time_keys)
 zq = sum(lbf.zpf[:zq][tii] for tii in prm.ts.time_keys)
 println(zp+zq)
 
 # %%
 stt = deepcopy(stt0);
-quasiGrad.power_balance!(grd, idx, prm, qG, stt, sys)
-quasiGrad.score_solve_pf!(lbf, prm, stt)
+QuasiGrad.power_balance!(grd, idx, prm, qG, stt, sys)
+QuasiGrad.score_solve_pf!(lbf, prm, stt)
 zp = sum(lbf.zpf[:zp][tii] for tii in prm.ts.time_keys)
 zq = sum(lbf.zpf[:zq][tii] for tii in prm.ts.time_keys)
 zt = zp + zq
@@ -699,7 +699,7 @@ zt = zp + zq
 # %% ======== ==============
 qG.num_lbfgs_steps = 10000
 
-quasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd)
 
 # %%
-quasiGrad.solve_parallel_linear_pf_with_Gurobi!(flw, grd, idx, ntk, prm, qG, stt, sys)
+QuasiGrad.solve_parallel_linear_pf_with_Gurobi!(flw, grd, idx, ntk, prm, qG, stt, sys)

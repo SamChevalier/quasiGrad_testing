@@ -1,4 +1,4 @@
-using quasiGrad
+using QuasiGrad
 using Revise
 
 # ======================= 617D1 === -- parallel ED
@@ -8,27 +8,27 @@ path = tfp*"C3E3.1_20230629/D1/C3E3N04224D1/scenario_131.json"
 path = tfp*"C3E3.1_20230629/D1/C3E3N08316D1/scenario_001.json"
 
 # %% ===
-jsn  = quasiGrad.load_json(path)
-adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn, perturb_states=false);
+jsn  = QuasiGrad.load_json(path)
+adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn, perturb_states=false);
 qG.print_projection_success = false
 
-quasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 
-quasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd; first_solve=true)
-quasiGrad.initialize_ctg_lists!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd; first_solve=true)
+QuasiGrad.initialize_ctg_lists!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 stt0 = deepcopy(stt);
 
 # %% =========
-quasiGrad.run_adam_pf!(adm, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.run_adam_pf!(adm, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 
 # %% ==============
 stt = deepcopy(stt0);
 
-quasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd; first_solve=true)
+QuasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd; first_solve=true)
 
 # %% =================
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys);
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys);
 
 println(scr[:zp] + scr[:zq])
 
@@ -75,8 +75,8 @@ qG.alpha_pf_t0 = Dict(:vm    => vm_scale_t0,
 # balance: pq = pq0 + J*dva  =>  dva = J\(pq-pq0)
 for tii in prm.ts.time_keys[1:5]
     # update the Jacobian
-    quasiGrad.update_Ybus!(idx, ntk, prm, stt, sys, tii)
-    quasiGrad.build_Jac_and_pq0!(ntk, qG, stt, sys, tii)
+    QuasiGrad.update_Ybus!(idx, ntk, prm, stt, sys, tii)
+    QuasiGrad.build_Jac_and_pq0!(ntk, qG, stt, sys, tii)
     J = ntk.Jac[tii][:, [1:sys.nb; (sys.nb+2):end]]
 
     # compute injections
@@ -114,7 +114,7 @@ for tii in prm.ts.time_keys[1:5]
 end
 
 # %% ==============
-quasiGrad.initialize_ctg_lists!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.initialize_ctg_lists!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 
 # %% === solve pf
@@ -124,7 +124,7 @@ qG.adam_max_time  = 25.0
 qG.max_linear_pfs = 1
 qG.run_lbfgs      = false
 
-quasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd; first_solve = true)
+QuasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd; first_solve = true)
 
 
 # %% =================
@@ -132,7 +132,7 @@ stt = deepcopy(stt0);
 
 qG.skip_ctg_eval = true
 qG.adam_max_time  = 100.0
-quasiGrad.run_adam!(adm, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.run_adam!(adm, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 
 # %%
 
@@ -140,11 +140,11 @@ quasiGrad.run_adam!(adm, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, s
 
 
 
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 
 # %% =================
-quasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
+QuasiGrad.update_states_and_grads_for_solve_pf_lbfgs!(cgd, grd, idx, lbf, mgd, prm, qG, stt, sys)
 zp = -sum(lbf.zpf[:zp][tii] for tii in prm.ts.time_keys)
 zq = -sum(lbf.zpf[:zq][tii] for tii in prm.ts.time_keys)
 zs = -sum(lbf.zpf[:zs][tii] for tii in prm.ts.time_keys)
@@ -159,12 +159,12 @@ qG.print_zms                   = true
 qG.adam_max_time               = 50.0
 
 qG.skip_ctg_eval = true
-quasiGrad.run_adam!(adm, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.run_adam!(adm, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 
 
 # %%
 qG.adam_max_time = 50.0
-quasiGrad.run_adam_pf!(adm, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.run_adam_pf!(adm, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 
 
 # %%
@@ -207,13 +207,13 @@ qG.alpha_tnow = Dict(:vm    => vm_scale_t0,
 
 # %%
 
-quasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd; first_solve = true)
+QuasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd; first_solve = true)
 
 
 
 
 # %% ===
-quasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd; first_solve = false)
+QuasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd; first_solve = false)
 
 # %% solve adam with homotopy!
 stt = deepcopy(stt0);
@@ -233,13 +233,13 @@ qG.skip_ctg_eval               = true
 qG.ctg_memory         = 0.15            
 qG.one_min_ctg_memory = 1.0 - qG.ctg_memory
 
-quasiGrad.run_adam!(adm, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.run_adam!(adm, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 
 # %%
 qG.always_solve_ctg            = true
 qG.skip_ctg_eval               = false
 
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 # %% ==================
 # choose adam step sizes (initial)
@@ -334,17 +334,17 @@ qG.num_lbfgs_steps       = 150
 qG.initial_pf_lbfgs_step = 0.001
 qG.max_linear_pfs        = 2
 
-quasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd; first_solve = true)
+QuasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd; first_solve = true)
 
 
 # %% test -- wmi factor acceleration!!!
 Base.GC.gc()
 # %%
 
-@time quasiGrad.initialize_ctg(stt, sys, prm, qG, idx);
+@time QuasiGrad.initialize_ctg(stt, sys, prm, qG, idx);
 
 # %% =============
-E, Efr, Eto = quasiGrad.build_incidence(idx, prm, stt, sys)
+E, Efr, Eto = QuasiGrad.build_incidence(idx, prm, stt, sys)
 Er = E[:,2:end]
 ErT = copy(Er')
 
@@ -381,12 +381,12 @@ ac_ids = [prm.acline.id; prm.xfm.id ]
 ac_b_params = -[prm.acline.b_sr; prm.xfm.b_sr]
 
 # build the full incidence matrix: E = lines x buses
-E, Efr, Eto = quasiGrad.build_incidence(idx, prm, stt, sys)
+E, Efr, Eto = QuasiGrad.build_incidence(idx, prm, stt, sys)
 Er = E[:,2:end]
 ErT = copy(Er')
 
 # get the diagonal admittance matrix   => Ybs == "b susceptance"
-Ybs = quasiGrad.spdiagm(ac_b_params)
+Ybs = QuasiGrad.spdiagm(ac_b_params)
 Yb  = E'*Ybs*E
 Ybr = Yb[2:end,2:end]  # use @view ? 
 
@@ -402,12 +402,12 @@ if qG.base_solver == "pcg"
     end
 
     # time is short -- let's jsut always use ldl preconditioner -- it's just as fast
-    Ybr_ChPr = quasiGrad.Preconditioners.lldl(Ybr, memory = qG.cutoff_level);
+    Ybr_ChPr = QuasiGrad.Preconditioners.lldl(Ybr, memory = qG.cutoff_level);
 else
     # time is short -- let's jsut always use ldl preconditioner -- it's just as fast
-    Ybr_ChPr = quasiGrad.Preconditioners.lldl(Ybr, memory = qG.cutoff_level);
-        # # => Ybr_ChPr = quasiGrad.I
-        # Ybr_ChPr = quasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
+    Ybr_ChPr = QuasiGrad.Preconditioners.lldl(Ybr, memory = qG.cutoff_level);
+        # # => Ybr_ChPr = QuasiGrad.I
+        # Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
 end
 
 # should we build the cholesky decomposition of the base case
@@ -416,13 +416,13 @@ end
 if qG.build_basecase_cholesky
     if minimum(ac_b_params) < 0.0
         @info "Yb not PSd -- using ldlt (instead of cholesky) to construct WMI update vectors."
-        Ybr_Ch = quasiGrad.ldlt(Ybr)
+        Ybr_Ch = QuasiGrad.ldlt(Ybr)
     else
-        Ybr_Ch = quasiGrad.cholesky(Ybr)
+        Ybr_Ch = QuasiGrad.cholesky(Ybr)
     end
 else
     # this is nonsense
-    Ybr_Ch = quasiGrad.I
+    Ybr_Ch = QuasiGrad.I
 end
 
 # get the flow matrix
@@ -440,16 +440,16 @@ ctg_params  = Dict(ctg_ii => Vector{Float64}(undef, length(prm.ctg.components[ct
 # should we build the full ctg matrices?
 #
 # build something small of the correct data type
-Ybr_k = Dict(1 => quasiGrad.spzeros(1,1))
+Ybr_k = Dict(1 => QuasiGrad.spzeros(1,1))
 
 # and/or, should we build the low rank ctg elements?
 #
-# no need => v_k = Dict(ctg_ii => quasiGrad.spzeros(nac) for ctg_ii in 1:sys.nctg)
+# no need => v_k = Dict(ctg_ii => QuasiGrad.spzeros(nac) for ctg_ii in 1:sys.nctg)
 # no need => b_k = Dict(ctg_ii => 0.0 for ctg_ii in 1:sys.nctg)
-u_k = [zeros(sys.nb-1) for ctg_ii in 1:sys.nctg] # Dict(ctg_ii => zeros(sys.nb-1) for ctg_ii in 1:sys.nctg) # Dict(ctg_ii => quasiGrad.spzeros(sys.nb-1) for ctg_ii in 1:sys.nctg)
+u_k = [zeros(sys.nb-1) for ctg_ii in 1:sys.nctg] # Dict(ctg_ii => zeros(sys.nb-1) for ctg_ii in 1:sys.nctg) # Dict(ctg_ii => QuasiGrad.spzeros(sys.nb-1) for ctg_ii in 1:sys.nctg)
 g_k = zeros(sys.nctg) # => Dict(ctg_ii => 0.0 for ctg_ii in 1:sys.nctg)
 z_k = [zeros(sys.nac) for ctg_ii in 1:sys.nctg]
-# if the "w_k" formulation is wanted => w_k = Dict(ctg_ii => quasiGrad.spzeros(sys.nb-1) for ctg_ii in 1:sys.nctg)
+# if the "w_k" formulation is wanted => w_k = Dict(ctg_ii => QuasiGrad.spzeros(sys.nb-1) for ctg_ii in 1:sys.nctg)
 
 # loop over components (see below for comments!!!)
 for ctg_ii in 1:sys.nctg
@@ -464,8 +464,8 @@ end
 Threads.@threads for ctg_ii in 1:sys.nctg
     # this code is optimized -- see above for comments!!!
     u_k[ctg_ii]        .= Ybr_Ch\Er[ctg_out_ind[ctg_ii][1],:]
-    quasiGrad.@turbo g_k[ctg_ii]  = -ac_b_params[ctg_out_ind[ctg_ii][1]]/(1.0+(quasiGrad.dot(Er[ctg_out_ind[ctg_ii][1],:],u_k[ctg_ii]))*-ac_b_params[ctg_out_ind[ctg_ii][1]])
-    quasiGrad.@turbo quasiGrad.mul!(z_k[ctg_ii], Yfr, u_k[ctg_ii])
+    QuasiGrad.@turbo g_k[ctg_ii]  = -ac_b_params[ctg_out_ind[ctg_ii][1]]/(1.0+(QuasiGrad.dot(Er[ctg_out_ind[ctg_ii][1],:],u_k[ctg_ii]))*-ac_b_params[ctg_out_ind[ctg_ii][1]])
+    QuasiGrad.@turbo QuasiGrad.mul!(z_k[ctg_ii], Yfr, u_k[ctg_ii])
 end
 
 
@@ -481,7 +481,7 @@ lck = Threads.SpinLock()
                             #Threads.@threads for ctg_ii in 1:sys.nctg
                             #    # u_k[ctg_ii] .= Ybr_Ch\Er[ctg_out_ind[ctg_ii][1],:]
                             #
-                            #    quasiGrad.cg!(u_k[ctg_ii], Ybr, Er[ctg_out_ind[ctg_ii][1],:], abstol = qG.pcg_tol, Pl=Ybr_ChPr, maxiter = qG.max_pcg_its)
+                            #    QuasiGrad.cg!(u_k[ctg_ii], Ybr, Er[ctg_out_ind[ctg_ii][1],:], abstol = qG.pcg_tol, Pl=Ybr_ChPr, maxiter = qG.max_pcg_its)
                             #    
                             #end
 u_k = [zeros(sys.nb-1) for ctg_ii in 1:sys.nctg]
@@ -507,9 +507,9 @@ Threads.@threads for ctg_ii in 1:sys.nctg
     
     # this code is optimized -- see above for comments!!!
     #u_k[ctg_ii]        .= Ybr_Ch\Er[ctg_out_ind[ctg_ii][1],:]
-    quasiGrad.cg!(u_k[ctg_ii], Ybr, zrs[thrID], abstol = qG.pcg_tol, Pl=Ybr_ChPr, maxiter = qG.max_pcg_its)
-    quasiGrad.@turbo g_k[ctg_ii]  = -ac_b_params[ctg_out_ind[ctg_ii][1]]/(1.0+(quasiGrad.dot(Er[ctg_out_ind[ctg_ii][1],:],u_k[ctg_ii]))*-ac_b_params[ctg_out_ind[ctg_ii][1]])
-    quasiGrad.@turbo quasiGrad.mul!(z_k[ctg_ii], Yfr, u_k[ctg_ii])
+    QuasiGrad.cg!(u_k[ctg_ii], Ybr, zrs[thrID], abstol = qG.pcg_tol, Pl=Ybr_ChPr, maxiter = qG.max_pcg_its)
+    QuasiGrad.@turbo g_k[ctg_ii]  = -ac_b_params[ctg_out_ind[ctg_ii][1]]/(1.0+(QuasiGrad.dot(Er[ctg_out_ind[ctg_ii][1],:],u_k[ctg_ii]))*-ac_b_params[ctg_out_ind[ctg_ii][1]])
+    QuasiGrad.@turbo QuasiGrad.mul!(z_k[ctg_ii], Yfr, u_k[ctg_ii])
 
     # all done!!
     Threads.lock(lck)
@@ -540,7 +540,7 @@ end
 
 function mydotavx(a::Vector{Float64}, b::Vector{Float64})
     s = 0.0
-    quasiGrad.@turbo for i ∈ eachindex(a,b)
+    QuasiGrad.@turbo for i ∈ eachindex(a,b)
         s += a[i]*b[i]
     end
     s
@@ -549,20 +549,20 @@ end
 # %% ===
 a = randn(23000)
 b = randn(23000)
-@btime quasiGrad.dot($a, $b);
+@btime QuasiGrad.dot($a, $b);
 @btime mydotavx($a, $b);
 
 # %% ===========
 tii = Int8(1)
 ctg_ii = 1360
 # apply WMI update! don't use function -- it allocates: ctg.theta_k[thrID] .= wmi_update(flw.theta[tii], ntk.u_k[ctg_ii], ntk.g_k[ctg_ii], flw.c[tii])
-quasiGrad.@turbo ctg.theta_k[thrID] .= flw.theta[tii] .- ntk.u_k[ctg_ii].*(ntk.g_k[ctg_ii]*quasiGrad.dot(ntk.u_k[ctg_ii], flw.c[tii]))
-quasiGrad.@turbo quasiGrad.mul!(ctg.pflow_k[thrID], ntk.Yfr, ctg.theta_k[thrID])
-quasiGrad.@turbo ctg.pflow_k[thrID] .+= flw.bt[tii]
-quasiGrad.@turbo ctg.sfr[thrID]     .= quasiGrad.LoopVectorization.sqrt_fast.(flw.qfr2[tii] .+ quasiGrad.LoopVectorization.pow_fast.(ctg.pflow_k[thrID],2))
-quasiGrad.@turbo ctg.sto[thrID]     .= quasiGrad.LoopVectorization.sqrt_fast.(flw.qto2[tii] .+ quasiGrad.LoopVectorization.pow_fast.(ctg.pflow_k[thrID],2))
-quasiGrad.@turbo ctg.sfr_vio[thrID] .= ctg.sfr[thrID] .- ntk.s_max
-quasiGrad.@turbo ctg.sto_vio[thrID] .= ctg.sto[thrID] .- ntk.s_max
+QuasiGrad.@turbo ctg.theta_k[thrID] .= flw.theta[tii] .- ntk.u_k[ctg_ii].*(ntk.g_k[ctg_ii]*QuasiGrad.dot(ntk.u_k[ctg_ii], flw.c[tii]))
+QuasiGrad.@turbo QuasiGrad.mul!(ctg.pflow_k[thrID], ntk.Yfr, ctg.theta_k[thrID])
+QuasiGrad.@turbo ctg.pflow_k[thrID] .+= flw.bt[tii]
+QuasiGrad.@turbo ctg.sfr[thrID]     .= QuasiGrad.LoopVectorization.sqrt_fast.(flw.qfr2[tii] .+ QuasiGrad.LoopVectorization.pow_fast.(ctg.pflow_k[thrID],2))
+QuasiGrad.@turbo ctg.sto[thrID]     .= QuasiGrad.LoopVectorization.sqrt_fast.(flw.qto2[tii] .+ QuasiGrad.LoopVectorization.pow_fast.(ctg.pflow_k[thrID],2))
+QuasiGrad.@turbo ctg.sfr_vio[thrID] .= ctg.sfr[thrID] .- ntk.s_max
+QuasiGrad.@turbo ctg.sto_vio[thrID] .= ctg.sto[thrID] .- ntk.s_max
 ctg.sfr_vio[thrID][ntk.ctg_out_ind[ctg_ii]] .= 0.0
 ctg.sto_vio[thrID][ntk.ctg_out_ind[ctg_ii]] .= 0.0
 
@@ -584,25 +584,25 @@ first_solve = true
 
         # update y_bus -- this only needs to be done once per time, 
         # since xfm/shunt values are not changing between iterations
-        quasiGrad.update_Ybus!(idx, ntk, prm, stt, sys, tii)
+        QuasiGrad.update_Ybus!(idx, ntk, prm, stt, sys, tii)
 
 
-            quasiGrad.update_Yflow!(idx, ntk, prm, stt, sys, tii)
+            QuasiGrad.update_Yflow!(idx, ntk, prm, stt, sys, tii)
 
             t1 = time()
 
             # build an empty model! lowering the tolerance doesn't seem to help!
-            model = Model(optimizer_with_attributes(() -> Gurobi.Optimizer(quasiGrad.GRB_ENV[]), "OutputFlag" => 0, MOI.Silent() => true, "Threads" => 1))
+            model = Model(optimizer_with_attributes(() -> Gurobi.Optimizer(QuasiGrad.GRB_ENV[]), "OutputFlag" => 0, MOI.Silent() => true, "Threads" => 1))
             set_string_names_on_creation(model, false)
 
             # increment
             pf_itr_cnt += 1
 
             # first, rebuild jacobian, and update base points: stt.pinj0, stt.qinj0
-            quasiGrad.build_Jac_and_pq0!(ntk, qG, stt, sys, tii)
+            QuasiGrad.build_Jac_and_pq0!(ntk, qG, stt, sys, tii)
             if first_solve == true
                 # flows are only constrained in the first solve
-                quasiGrad.build_Jac_sfr_and_sfr0!(idx, ntk, prm, stt, sys, tii)
+                QuasiGrad.build_Jac_sfr_and_sfr0!(idx, ntk, prm, stt, sys, tii)
             end
 
             # define the variables (single time index)
@@ -804,7 +804,7 @@ first_solve = true
             end
 
 # %%
-quasiGrad.solve_parallel_linear_pf_with_Gurobi!(flw, grd, idx, ntk, prm, qG, stt, sys; first_solve = false)
+QuasiGrad.solve_parallel_linear_pf_with_Gurobi!(flw, grd, idx, ntk, prm, qG, stt, sys; first_solve = false)
 
 # %%
 # using Plots
@@ -814,8 +814,8 @@ quasiGrad.solve_parallel_linear_pf_with_Gurobi!(flw, grd, idx, ntk, prm, qG, stt
 # Plots.plot!(x, 1 .- beta)
 
 # %%
-Mpf = quasiGrad.spdiagm(sys.nac, sys.nac, stt.pflow_over_sflow_fr[tii])
-Mqf = quasiGrad.spdiagm(sys.nac, sys.nac, stt.qflow_over_sflow_fr[tii])
+Mpf = QuasiGrad.spdiagm(sys.nac, sys.nac, stt.pflow_over_sflow_fr[tii])
+Mqf = QuasiGrad.spdiagm(sys.nac, sys.nac, stt.qflow_over_sflow_fr[tii])
 
 tt = Mpf*(ntk.Jac_pq_flow_fr[tii][1:sys.nac      , 1:sys.nb]) + Mqf*(ntk.Jac_pq_flow_fr[tii][(sys.nac+1):end, 1:sys.nb])
 
@@ -823,11 +823,11 @@ rr = Mpf*(ntk.Jac_pq_flow_fr[tii][1:sys.nac      , (sys.nb+1):end]) + Mqf*(ntk.J
 
 # %%
 for tii in prm.ts.time_keys
-    ntk.Jac_sflow_fr[tii] = quasiGrad.spzeros(sys.nac, 2*sys.nb)
+    ntk.Jac_sflow_fr[tii] = QuasiGrad.spzeros(sys.nac, 2*sys.nb)
 end
 
 # %% ==============
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys);
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys);
 
 println(sum(sum(stt.zhat_mndn[tii]) for tii in prm.ts.time_keys)) 
 println(sum(sum(stt.zhat_mnup[tii]) for tii in prm.ts.time_keys)) 

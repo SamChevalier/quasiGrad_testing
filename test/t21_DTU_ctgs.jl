@@ -1,5 +1,5 @@
 using BenchmarkTools
-using quasiGrad
+using QuasiGrad
 using Revise
 
 # files
@@ -10,20 +10,20 @@ NewTimeLimitInSeconds = TimeLimitInSeconds - 35.0
 Division              = 1
 NetworkModel          = "test"
 AllowSwitching        = 0
-jsn                   = quasiGrad.load_json(path)
+jsn                   = QuasiGrad.load_json(path)
     
 # I2. initialize the system
-adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn, perturb_states = true);
+adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn, perturb_states = true);
 
 # %% solve the ctgs
 qG.num_threads = 6
-@btime quasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+@btime QuasiGrad.solve_ctgs!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 # test the solution
 qG.eval_grad = false
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 qG.eval_grad = true
 println(scr[:zctg_avg])
 
 # write a solution
-quasiGrad.write_solution("solution.jl", prm, qG, stt, sys)
+QuasiGrad.write_solution("solution.jl", prm, qG, stt, sys)

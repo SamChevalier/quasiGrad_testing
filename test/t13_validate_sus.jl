@@ -1,4 +1,4 @@
-using quasiGrad
+using QuasiGrad
 using GLMakie
 using Revise
 using Plots
@@ -21,7 +21,7 @@ Division              = 1
 NetworkModel          = "test"
 AllowSwitching        = 0
 
-# this is the master function which executes quasiGrad.
+# this is the master function which executes QuasiGrad.
 # 
 #
 # =====================================================\\
@@ -29,37 +29,37 @@ AllowSwitching        = 0
 start_time = time()
 
 # I1. load the system data
-jsn = quasiGrad.load_json(InFile1)
+jsn = QuasiGrad.load_json(InFile1)
 
 # I2. initialize the system
-adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = quasiGrad.base_initialization(jsn, false, 1.0);
+adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn, false, 1.0);
 
 qG.apply_grad_weight_homotopy = false
 
 # I3. run an economic dispatch and update the states
-quasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
-quasiGrad.solve_Gurobi_projection!(idx, prm, qG, stt, sys, upd, final_projection = true)
+QuasiGrad.solve_Gurobi_projection!(idx, prm, qG, stt, sys, upd, final_projection = true)
 
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
-quasiGrad.write_solution("solution.jl", prm, qG, stt, sys)
+QuasiGrad.write_solution("solution.jl", prm, qG, stt, sys)
 
 # %% 
 qG.max_pf_dx = 1e-2
-quasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd)
+QuasiGrad.solve_power_flow!(adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd)
 
 # %%
 qG.IntFeasTol = 1e-9
 qG.FeasibilityTol = 1e-9
 qG.time_lim = 15.0
-quasiGrad.solve_Gurobi_projection!(idx, prm, qG, stt, sys, upd, final_projection = true)
+QuasiGrad.solve_Gurobi_projection!(idx, prm, qG, stt, sys, upd, final_projection = true)
 
-quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
-quasiGrad.write_solution("solution.jl", prm, qG, stt, sys)
+QuasiGrad.write_solution("solution.jl", prm, qG, stt, sys)
 
 
 # %%
@@ -99,39 +99,39 @@ empty!(model)
 
 # quiet down!!!
 # set_silent(model)
-# alternative => quasiGrad.set_optimizer_attribute(model, "OutputFlag", qG.GRB_output_flag)
+# alternative => QuasiGrad.set_optimizer_attribute(model, "OutputFlag", qG.GRB_output_flag)
 
 # set model properties
-#quasiGrad.set_optimizer_attribute(model, "FeasibilityTol", qG.FeasibilityTol)
-quasiGrad.set_optimizer_attribute(model, "IntFeasTol",     qG.IntFeasTol)
-#quasiGrad.set_optimizer_attribute(model, "MIPGap",         qG.mip_gap)
-#quasiGrad.set_optimizer_attribute(model, "TimeLimit",      qG.time_lim)
+#QuasiGrad.set_optimizer_attribute(model, "FeasibilityTol", qG.FeasibilityTol)
+QuasiGrad.set_optimizer_attribute(model, "IntFeasTol",     qG.IntFeasTol)
+#QuasiGrad.set_optimizer_attribute(model, "MIPGap",         qG.mip_gap)
+#QuasiGrad.set_optimizer_attribute(model, "TimeLimit",      qG.time_lim)
 
 # MOI tolerances
-quasiGrad.set_attribute(model, MOI.RelativeGapTolerance(), 1e-3)
-quasiGrad.set_attribute(model, MOI.AbsoluteGapTolerance(), 1e-3)
+QuasiGrad.set_attribute(model, MOI.RelativeGapTolerance(), 1e-3)
+QuasiGrad.set_attribute(model, MOI.AbsoluteGapTolerance(), 1e-3)
 
 # define local time keys
 tkeys = prm.ts.time_keys
 
 # define the minimum set of variables we will need to solve the constraints                                                       -- round() the int?
-u_on_dev  = Dict{Symbol, quasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.u_on_dev[tkeys[ii]][dev],  binary=true)       for ii in 1:(sys.nT)) # => base_name = "u_on_dev_t$(ii)",  
-p_on      = Dict{Symbol, quasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.p_on[tkeys[ii]][dev])                         for ii in 1:(sys.nT)) # => base_name = "p_on_t$(ii)",      
-dev_q     = Dict{Symbol, quasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.dev_q[tkeys[ii]][dev],     lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "dev_q_t$(ii)",     
-p_rgu     = Dict{Symbol, quasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.p_rgu[tkeys[ii]][dev],     lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "p_rgu_t$(ii)",     
-p_rgd     = Dict{Symbol, quasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.p_rgd[tkeys[ii]][dev],     lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "p_rgd_t$(ii)",     
-p_scr     = Dict{Symbol, quasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.p_scr[tkeys[ii]][dev],     lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "p_scr_t$(ii)",     
-p_nsc     = Dict{Symbol, quasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.p_nsc[tkeys[ii]][dev],     lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "p_nsc_t$(ii)",     
-p_rru_on  = Dict{Symbol, quasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.p_rru_on[tkeys[ii]][dev],  lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "p_rru_on_t$(ii)",  
-p_rru_off = Dict{Symbol, quasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.p_rru_off[tkeys[ii]][dev], lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "p_rru_off_t$(ii)", 
-p_rrd_on  = Dict{Symbol, quasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.p_rrd_on[tkeys[ii]][dev],  lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "p_rrd_on_t$(ii)",  
-p_rrd_off = Dict{Symbol, quasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.p_rrd_off[tkeys[ii]][dev], lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "p_rrd_off_t$(ii)", 
-q_qru     = Dict{Symbol, quasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.q_qru[tkeys[ii]][dev],     lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "q_qru_t$(ii)",     
-q_qrd     = Dict{Symbol, quasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.q_qrd[tkeys[ii]][dev],     lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "q_qrd_t$(ii)",     
+u_on_dev  = Dict{Symbol, QuasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.u_on_dev[tkeys[ii]][dev],  binary=true)       for ii in 1:(sys.nT)) # => base_name = "u_on_dev_t$(ii)",  
+p_on      = Dict{Symbol, QuasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.p_on[tkeys[ii]][dev])                         for ii in 1:(sys.nT)) # => base_name = "p_on_t$(ii)",      
+dev_q     = Dict{Symbol, QuasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.dev_q[tkeys[ii]][dev],     lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "dev_q_t$(ii)",     
+p_rgu     = Dict{Symbol, QuasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.p_rgu[tkeys[ii]][dev],     lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "p_rgu_t$(ii)",     
+p_rgd     = Dict{Symbol, QuasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.p_rgd[tkeys[ii]][dev],     lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "p_rgd_t$(ii)",     
+p_scr     = Dict{Symbol, QuasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.p_scr[tkeys[ii]][dev],     lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "p_scr_t$(ii)",     
+p_nsc     = Dict{Symbol, QuasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.p_nsc[tkeys[ii]][dev],     lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "p_nsc_t$(ii)",     
+p_rru_on  = Dict{Symbol, QuasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.p_rru_on[tkeys[ii]][dev],  lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "p_rru_on_t$(ii)",  
+p_rru_off = Dict{Symbol, QuasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.p_rru_off[tkeys[ii]][dev], lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "p_rru_off_t$(ii)", 
+p_rrd_on  = Dict{Symbol, QuasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.p_rrd_on[tkeys[ii]][dev],  lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "p_rrd_on_t$(ii)",  
+p_rrd_off = Dict{Symbol, QuasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.p_rrd_off[tkeys[ii]][dev], lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "p_rrd_off_t$(ii)", 
+q_qru     = Dict{Symbol, QuasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.q_qru[tkeys[ii]][dev],     lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "q_qru_t$(ii)",     
+q_qrd     = Dict{Symbol, QuasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.q_qrd[tkeys[ii]][dev],     lower_bound = 0.0) for ii in 1:(sys.nT)) # => base_name = "q_qrd_t$(ii)",     
 
 # add a few more (implicit) variables which are necessary for solving this system
-u_su_dev = Dict{Symbol, quasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.u_su_dev[tkeys[ii]][dev], binary=true) for ii in 1:(sys.nT)) # => base_name = "u_su_dev_t$(ii)", 
-u_sd_dev = Dict{Symbol, quasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.u_sd_dev[tkeys[ii]][dev], binary=true) for ii in 1:(sys.nT)) # => base_name = "u_sd_dev_t$(ii)", 
+u_su_dev = Dict{Symbol, QuasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.u_su_dev[tkeys[ii]][dev], binary=true) for ii in 1:(sys.nT)) # => base_name = "u_su_dev_t$(ii)", 
+u_sd_dev = Dict{Symbol, QuasiGrad.JuMP.VariableRef}(tkeys[ii] => @variable(model, start=stt.u_sd_dev[tkeys[ii]][dev], binary=true) for ii in 1:(sys.nT)) # => base_name = "u_sd_dev_t$(ii)", 
 
 # we have the affine "AffExpr" expressions (whose values are specified)
 dev_p = Dict(tkeys[ii] => AffExpr(0.0) for ii in 1:(sys.nT))
@@ -469,7 +469,7 @@ end
 # solve
 optimize!(model)
 
-quasiGrad.solution_status(model)
+QuasiGrad.solution_status(model)
 # %%
 
 
@@ -487,7 +487,7 @@ value(    dev_p[tii] - dev_p_previous
 +     prm.dev.p_startup_ramp_ub[dev]*(u_su_dev[tii] + 1.0 - u_on_dev[tii])))
 
 # %%
-@btime quasiGrad.device_startup_states!(grd, idx, mgd, prm, qG, stt, sys)
+@btime QuasiGrad.device_startup_states!(grd, idx, mgd, prm, qG, stt, sys)
 sum(sum(stt.zsus_dev[tii]    for tii in prm.ts.time_keys))
 
 # %% timing
@@ -497,7 +497,7 @@ qG.eval_grad = false
 
 # %%
 
-function sus!(grd::quasiGrad.Grad, idx::quasiGrad.Index, mgd::quasiGrad.MasterGrad, prm::quasiGrad.Param, qG::quasiGrad.QG, stt::quasiGrad.State, sys::quasiGrad.System)
+function sus!(grd::QuasiGrad.Grad, idx::QuasiGrad.Index, mgd::QuasiGrad.MasterGrad, prm::QuasiGrad.Param, qG::QuasiGrad.QG, stt::QuasiGrad.State, sys::QuasiGrad.System)
     # loop over each time period
     for tii in prm.ts.time_keys
         for dev in 1:sys.ndev

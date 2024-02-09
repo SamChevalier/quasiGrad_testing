@@ -18,14 +18,14 @@ end
     ...
 end
 
-quasiGrad.Polyester.ThreadingUtilities.sleep_all_tasks()
+QuasiGrad.Polyester.ThreadingUtilities.sleep_all_tasks()
 
 Threads.@threads for tii in prm.ts.time_keys
     ...
 end
 
 # in this file, we design the function which solves economic dispatch
-function solve_parallel_economic_dispatch!(idx::quasiGrad.Index, prm::quasiGrad.Param, qG::quasiGrad.QG, scr::Dict{Symbol, Float64}, stt::quasiGrad.State, sys::quasiGrad.System, upd::Dict{Symbol, Vector{Vector{Int64}}}; include_sus_in_ed::Bool=true)
+function solve_parallel_economic_dispatch!(idx::QuasiGrad.Index, prm::QuasiGrad.Param, qG::QuasiGrad.QG, scr::Dict{Symbol, Float64}, stt::QuasiGrad.State, sys::QuasiGrad.System, upd::Dict{Symbol, Vector{Vector{Int64}}}; include_sus_in_ed::Bool=true)
     # note: all binaries are LP relaxed (so there is no BaB-ing): 0 < b < 1
     t_ed0 = time()
     
@@ -452,8 +452,8 @@ function solve_parallel_economic_dispatch!(idx::quasiGrad.Index, prm::quasiGrad.
 
     # update the u_sum and powers (used in clipping, so must be correct!)
     qG.run_susd_updates = true
-    quasiGrad.simple_device_statuses_and_transposition!(idx, prm, qG, stt)
-    quasiGrad.device_active_powers!(idx, prm, qG, stt, sys)
+    QuasiGrad.simple_device_statuses_and_transposition!(idx, prm, qG, stt)
+    QuasiGrad.device_active_powers!(idx, prm, qG, stt, sys)
 
     # now, we may compute the actual score!
     scr[:ed_obj] = sum(stt.parallel_ed_obj)
@@ -465,7 +465,7 @@ end
 
 
 # %% =============
-include("./src/quasiGrad.jl")
+include("./src/QuasiGrad.jl")
 
 # %% =============
 using Pkg
@@ -473,15 +473,15 @@ Pkg.activate(DEPOT_PATH[1])
 
 tfp = "C:/Users/Samuel.HORACE/Dropbox (Personal)/Documents/Julia/GO3_testcases/"
 InFile1 = tfp*"C3E3.1_20230629/D1/C3E3N00617D1/scenario_001.json"
-@time jsn = quasiGrad.load_json(InFile1)
+@time jsn = QuasiGrad.load_json(InFile1)
 
 # %%
 
 @time adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = 
-quasiGrad.base_initialization(jsn, Div=1, hpc_params=true);
+QuasiGrad.base_initialization(jsn, Div=1, hpc_params=true);
 
 # %%
-@time quasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
+@time QuasiGrad.update_states_and_grads!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys)
 
 # %%
 
