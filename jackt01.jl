@@ -1,7 +1,9 @@
+using Plots
+using Revise
 using QuasiGrad
 
-# %% identify the data
-InFile1 = "./data/scenario_027.json"
+# identify the data
+InFile1 = "./data/c3s1_d1_600_scenario_001.json"
 
 # call the jsn data
 jsn = QuasiGrad.load_json(InFile1)
@@ -15,59 +17,68 @@ stt0 = deepcopy(stt);
 
 # %% ============== runs tests here
 #
-# reset the state
+# reset the state -- this basically resests all variables, so you can run a new test
 stt = deepcopy(stt0)
-qG.adam_max_time = 60.0
 
-# choose adam step sizes for power flow (initial)
-vm_pf_t0      = 1e-6
-va_pf_t0      = 1e-6
-phi_pf_t0     = 1e-6
-tau_pf_t0     = 1e-6
-dc_pf_t0      = 1e-4
-power_pf_t0   = 1e-4
-bin_pf_t0     = 1e-4 # bullish!!!
+# define the size of the initial steps -- 7 variables
+voltage_magnitude_step_t0  = 100*1e-5
+voltage_phase_step_t0      = 100*1e-5
+transformer_phi_step_t0    = 100*1e-5
+transfomer_tau_step_t0     = 100*1e-5
+hvdc_line_step_t0          = 100*1e-4
+device_power_step_t0       = 100*1e-4
+binary_step_t0             = 100*1e-4
 
-qG.alpha_pf_t0[:vm]     = vm_pf_t0
-qG.alpha_pf_t0[:va]     = va_pf_t0
-# xfm
-qG.alpha_pf_t0[:phi]    = phi_pf_t0
-qG.alpha_pf_t0[:tau]    = tau_pf_t0
-# dc
-qG.alpha_pf_t0[:dc_pfr] = dc_pf_t0
-qG.alpha_pf_t0[:dc_qto] = dc_pf_t0
-qG.alpha_pf_t0[:dc_qfr] = dc_pf_t0
-# powers
-qG.alpha_pf_t0[:dev_q]  = power_pf_t0
-qG.alpha_pf_t0[:p_on]   = power_pf_t0/10.0 # downscale active power!!!!
-# bins
-qG.alpha_pf_t0[:u_step_shunt] = bin_pf_t0
+# define the size of the final steps -- 7 variables
+voltage_magnitude_step_tf  = 5e-10
+voltage_phase_step_tf      = 5e-10
+transformer_phi_step_tf    = 5e-10
+transfomer_tau_step_tf     = 5e-10
+hvdc_line_step_tf          = 1e-10
+device_power_step_tf       = 1e-10
+binary_step_tf             = 1e-10
 
-# choose adam step sizes for power flow (final)
-vm_pf_tf    = 5e-7
-va_pf_tf    = 5e-7
-phi_pf_tf   = 5e-7
-tau_pf_tf   = 5e-7
-dc_pf_tf    = 1e-7
-power_pf_tf = 1e-7
-bin_pf_tf   = 1e-7 # bullish!!!
+# build dicts
+step_t0_dict = Dict(:vm      => voltage_magnitude_step_t0,
+               :va           => voltage_phase_step_t0,    
+               :phi          => transformer_phi_step_t0,  
+               :tau          => transfomer_tau_step_t0,   
+               :dc_pfr       => hvdc_line_step_t0,
+               :dc_qto       => hvdc_line_step_t0,
+               :dc_qfr       => hvdc_line_step_t0,
+               :dev_q        => device_power_step_t0,
+               :p_on         => device_power_step_t0,
+               :u_step_shunt => binary_step_t0)
 
-qG.alpha_pf_tf[:vm]     = vm_pf_tf
-qG.alpha_pf_tf[:va]     = va_pf_tf
-# xfm
-qG.alpha_pf_tf[:phi]    = phi_pf_tf
-qG.alpha_pf_tf[:tau]    = tau_pf_tf
-# dc
-qG.alpha_pf_tf[:dc_pfr] = dc_pf_tf
-qG.alpha_pf_tf[:dc_qto] = dc_pf_tf
-qG.alpha_pf_tf[:dc_qfr] = dc_pf_tf
-# powers
-qG.alpha_pf_tf[:dev_q]  = power_pf_tf
-qG.alpha_pf_tf[:p_on]   = power_pf_tf/10.0 # downscale active power!!!!
-# bins
-qG.alpha_pf_tf[:u_step_shunt] = bin_pf_tf
+step_tf_dict = Dict(:vm      => voltage_magnitude_step_tf,
+               :va           => voltage_phase_step_tf,    
+               :phi          => transformer_phi_step_tf,  
+               :tau          => transfomer_tau_step_tf,   
+               :dc_pfr       => hvdc_line_step_tf,
+               :dc_qto       => hvdc_line_step_tf,
+               :dc_qfr       => hvdc_line_step_tf,
+               :dev_q        => device_power_step_tf,
+               :p_on         => device_power_step_tf,
+               :u_step_shunt => binary_step_tf)
 
-QuasiGrad.jack_solves_adam_pf!(adm, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd; first_solve = false)
+# beta parameters
+beta1 = 0.9
+beta2 = 0.99
+
+# sigmoid parameters
+p1 = 4.0
+p2 = 0.6
+
+# run time
+adam_max_time = 20.0
+
+QuasiGrad.update_states_and_grads_for_adam_pf!(cgd, grd, idx, mgd, prm, qG, scr, stt, sys; clip_pq_based_on_bins=false)
+
+# run adam
+penalties = QuasiGrad.jack_solves_adam_pf!(beta1, beta2, step_t0_dict, step_tf_dict, adam_max_time, p1, p2, adm, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+
+# plot the progress -- plot the negatives, that we try to drive to 0 :)
+plot(-penalties, ylabel = "penalty value", xlabel = "adam step number", yaxis=:log)
 
 # %% === test the current stepping routine
 using Plots
@@ -78,6 +89,16 @@ tnow     = t0:0.01:tf
 alpha_t0 = 10.0   # first step
 alpha_tf = 0.001  # last step
 
+
+x = -1:0.01:1
+y = @. -cos(exp(-x)) .+ 1
+
+plot!(x,y)
+
+
+
+# %%
+
 tnorm          = @. 2.0*(tnow-t0)/(tf - t0) - 1.0 # scale between -1 and 1
 beta           = @. exp(4.0*tnorm)/(0.6 + exp(4.0*tnorm))
 log_stp_ratio  = @. log10(alpha_t0/alpha_tf)
@@ -85,5 +106,3 @@ alpha_tnow     = @. 10.0 ^ (-beta*log_stp_ratio + log10(alpha_t0))
 
 # Plots.plot(tnow, alpha_tnow, xlabel="time (sec)")
 Plots.plot(tnow, alpha_tnow, xlabel="time (sec)", ylabel="step size", yaxis=:log)
-
-
