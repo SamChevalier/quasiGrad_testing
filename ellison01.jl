@@ -2,7 +2,7 @@ using Plots
 using Revise
 using QuasiGrad
 
-# identify the data
+# %% identify the data
 InFile1 = "./data/c3s1_d1_600_scenario_001.json"
 
 # call the jsn data
@@ -11,7 +11,7 @@ jsn = QuasiGrad.load_json(InFile1)
 # initialize the network 
 adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn, Div=1, hpc_params=false);
 
-# %% solve a single time period power flow with adam
+# solve a single time period power flow with adam
 QuasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 stt0 = deepcopy(stt);
 
@@ -21,22 +21,22 @@ stt0 = deepcopy(stt);
 stt = deepcopy(stt0)
 
 # define the size of the initial steps -- 7 variables
-voltage_magnitude_step_t0  = 1*1e-5
-voltage_phase_step_t0      = 1*1e-5
-transformer_phi_step_t0    = 1*1e-5
-transfomer_tau_step_t0     = 1*1e-5
-hvdc_line_step_t0          = 20*1e-4
-device_power_step_t0       = 20*1e-4
-binary_step_t0             = 20*1e-4
+voltage_magnitude_step_t0  = 100*1e-5
+voltage_phase_step_t0      = 100*1e-5
+transformer_phi_step_t0    = 100*1e-5
+transfomer_tau_step_t0     = 100*1e-5
+hvdc_line_step_t0          = 100*1e-4
+device_power_step_t0       = 100*1e-4
+binary_step_t0             = 100*1e-4
 
 # define the size of the final steps -- 7 variables
-voltage_magnitude_step_tf  = 1e-11
-voltage_phase_step_tf      = 1e-11
-transformer_phi_step_tf    = 1e-11
-transfomer_tau_step_tf     = 1e-11
-hvdc_line_step_tf          = 1e-11
-device_power_step_tf       = 1e-11
-binary_step_tf             = 1e-11
+voltage_magnitude_step_tf  = 5e-10
+voltage_phase_step_tf      = 5e-10
+transformer_phi_step_tf    = 5e-10
+transfomer_tau_step_tf     = 5e-10
+hvdc_line_step_tf          = 1e-10
+device_power_step_tf       = 1e-10
+binary_step_tf             = 1e-10
 
 # build dicts
 step_t0_dict = Dict(:vm      => voltage_magnitude_step_t0,
@@ -70,39 +70,30 @@ p1 = 4.0
 p2 = 0.6
 
 # run time
-adam_max_time = 60.0
+adam_max_time = 10.0
 
-QuasiGrad.update_states_and_grads_for_adam_pf!(cgd, grd, idx, mgd, prm, qG, scr, stt, sys; clip_pq_based_on_bins=false)
+# solve type
+solve_type = "adadelta"
+#solve_type = "adam"
 
 # run adam
-penalties = QuasiGrad.jack_solves_adam_pf!(beta1, beta2, step_t0_dict, step_tf_dict, adam_max_time, p1, p2, adm, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+penalties = QuasiGrad.ellison_solves_pf!(solve_type, beta1, beta2, step_t0_dict, step_tf_dict, adam_max_time, p1, p2, adm, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 
 # plot the progress -- plot the negatives, that we try to drive to 0 :)
-plot!(-penalties, ylabel = "penalty value", xlabel = "adam step number", yaxis=:log)
+# plot(-penalties, ylabel = "penalty value", xlabel = "adam step number", yaxis=:log)
 
-# %% === test the current stepping routine
-using Plots
+# %% === for saving
+using HDF5
 
-t0       = 10.0
-tf       = 35.0
-tnow     = t0:0.01:tf
-alpha_t0 = 10.0   # first step
-alpha_tf = 0.001  # last step
+penalties_test1 = randn(100)
 
+fid = h5open("data_file.h5", "w") do file
+    write(file, "penalties_test1", penalties_test1)
+end
 
-x = -1:0.01:1
-y = @. -cos(exp(-x)) .+ 1
+# %% === for saving
+using HDF5
 
-plot!(x,y)
-
-
-
-# %%
-
-tnorm          = @. 2.0*(tnow-t0)/(tf - t0) - 1.0 # scale between -1 and 1
-beta           = @. exp(4.0*tnorm)/(0.6 + exp(4.0*tnorm))
-log_stp_ratio  = @. log10(alpha_t0/alpha_tf)
-alpha_tnow     = @. 10.0 ^ (-beta*log_stp_ratio + log10(alpha_t0))
-
-# Plots.plot(tnow, alpha_tnow, xlabel="time (sec)")
-Plots.plot(tnow, alpha_tnow, xlabel="time (sec)", ylabel="step size", yaxis=:log)
+fid = h5open("data_file.h5", "r") do file
+    global penalties_test1_load    = read(file, "penalties_test1")
+end
