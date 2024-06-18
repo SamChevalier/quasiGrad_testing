@@ -1,62 +1,123 @@
-#Starter Tasks
-#Sin Cos Product Plots
-using Plots
-function sincosproduct()
-    #x = range(-10*pi, 10*pi, length=6283) #done in length, not steps
-    xrange = -10pi:0.01:10pi #done in steps of 0.01
-    prod = sin.(xrange) .* cos.(xrange)
-    display(Plots.plot(xrange, prod, label="sin(x) * cos(x)", title="Plot of product of sin and cos", xlabel="x", ylabel="sin(x) * cos(x)"))
-end
+using Makie
+using GLMakie
+using QuasiGrad
 
+# call plotting tools 
+include("./informs/informs_plotting.jl")
 
-# %% 
+# %% identify the data
+InFile1 = "./data/c3s1_d1_600_scenario_001.json"
 
-#-----------------------------------------------------------------------------------
-#Linear System Solution
-using Random
-using LinearAlgebra #imports the backslash command that solves linear equations
-function linsystem()
-    A = randn(10,10) #10x10 matrix of random elements from the stnd normal distribution (mean 0, variance 1)
-    b = randn(10) #same as A, but it's a 10x1 matrix, or an array
-    lin = A \ b #backslash operator solves linear system
-    display(scatter(1:10, lin, label="Solution x", title="Solution of Ax = b"))
-end
-#-------------------------------------------------------------------------------------
-#Gradient Solution
-using ForwardDiff #takes ForwardDiff from JuliaDiff package, Forward finds gradient function and results of the function
-function gradsolution()
-    f(x::AbstractVector) = x[1]^2 #function to minimize, treats x as a vector
-    gradfunc = x -> ForwardDiff.gradient(f, [x])[1] #sets the gradient function, sends x as a 1-element array, and then pulls out the one element of the gradient after
-    function grad_descent(gradfunc, x0, s, max) #sets iteration function to find the optimized solution
-        x = x0
-        for i in 1:max
-            x -= s * gradfunc(x)
-        end
-        return x
-    end
-    x0 = 10 #starting point
-    s = 0.01 #step size
-    max = 1000 #maximum num of iterations
-    opt = grad_descent(gradfunc, x0, s, max) #finds optimized solution using function
-    println("Optimized solution x = $opt")
-end
-sincosproduct()
-linsystem()
-gradsolution()
+# call the jsn data
+jsn = QuasiGrad.load_json(InFile1)
 
-# %% 
-sincosproduct()
+# initialize the network 
+adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn, Div=1, hpc_params=false);
 
-# %% 
-function sum_of_numbers(v::Vector{Float64})
-    s = sum(v)
-    return s
-end
+# solve a single time period power flow with adam
+QuasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
+stt0 = deepcopy(stt);
 
-# %% ==========
-s = sum_of_numbers(Float32.(rand(5000)))
+# %% 1. call stt0 and solve
+stt = deepcopy(stt0);
 
-# %% 
+# write locally
+qG.write_location   = "local"
+qG.eval_grad        = true
+qG.always_solve_ctg = true
+qG.skip_ctg_eval    = false
 
+# turn off all printing
+qG.print_zms                     = false # print zms at every adam iteration?
+qG.print_final_stats             = false # print stats at the end?
+qG.print_lbfgs_iterations        = false
+qG.print_projection_success      = false
+qG.print_linear_pf_iterations    = false
+qG.print_reserve_cleanup_success = false
 
+# ===============
+vm_t0      = 2.5e-5
+va_t0      = 2.5e-5
+phi_t0     = 2.5e-5
+tau_t0     = 2.5e-5
+dc_t0      = 1e-2
+power_t0   = 1e-2
+reserve_t0 = 1e-2
+bin_t0     = 1e-2 # bullish!!!
+qG.alpha_t0 = Dict(
+               :vm     => vm_t0,
+               :va     => va_t0,
+               # xfm
+               :phi    => phi_t0,
+               :tau    => tau_t0,
+               # dc
+               :dc_pfr => dc_t0,
+               :dc_qto => dc_t0,
+               :dc_qfr => dc_t0,
+               # powers
+               :dev_q  => power_t0,
+               :p_on   => power_t0,
+               # reserves
+               :p_rgu     => reserve_t0,
+               :p_rgd     => reserve_t0,
+               :p_scr     => reserve_t0,
+               :p_nsc     => reserve_t0,
+               :p_rrd_on  => reserve_t0,
+               :p_rrd_off => reserve_t0,
+               :p_rru_on  => reserve_t0,
+               :p_rru_off => reserve_t0,
+               :q_qrd     => reserve_t0,
+               :q_qru     => reserve_t0,
+               # bins
+               :u_on_xfm     => bin_t0,
+               :u_on_dev     => bin_t0,
+               :u_step_shunt => bin_t0,
+               :u_on_acline  => bin_t0)
+vm_tf      = 5e-7 # 2e-6#
+va_tf      = 5e-7 # 2e-6#
+phi_tf     = 5e-7 # 2e-6#
+tau_tf     = 5e-7 # 2e-6#
+dc_tf      = 1e-4 # 1e-3#
+power_tf   = 1e-4 # 1e-3#
+reserve_tf = 1e-4 # 1e-3#
+bin_tf     = 1e-4 # 1e-3#
+qG.alpha_tf = Dict(
+                :vm     => vm_tf,
+                :va     => va_tf,
+                # xfm
+                :phi    => phi_tf,
+                :tau    => tau_tf,
+                # dc
+                :dc_pfr => dc_tf,
+                :dc_qto => dc_tf,
+                :dc_qfr => dc_tf,
+                # powers
+                :dev_q  => power_tf,
+                :p_on   => power_tf,
+                # reserves
+                :p_rgu     => reserve_tf,
+                :p_rgd     => reserve_tf,
+                :p_scr     => reserve_tf,
+                :p_nsc     => reserve_tf,
+                :p_rrd_on  => reserve_tf,
+                :p_rrd_off => reserve_tf,
+                :p_rru_on  => reserve_tf,
+                :p_rru_off => reserve_tf,
+                :q_qrd     => reserve_tf,
+                :q_qru     => reserve_tf,
+                # bins
+                :u_on_xfm     => bin_tf,
+                :u_on_dev     => bin_tf,
+                :u_step_shunt => bin_tf,
+                :u_on_acline  => bin_tf)
 
+# plot initial solutions!
+qG.print_zms     = true
+stt              = deepcopy(stt0);
+x_lim            = 100
+ax, fig, z_plt   = initialize_plot(qG, scr, x_lim)
+qG.skip_ctg_eval = false
+
+# stt = deepcopy(stt0);
+qG.adam_max_time = 100.0
+x_lim = run_adam_and_plot!(ax, fig, z_plt, adm, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd, x_lim, fp=true)
