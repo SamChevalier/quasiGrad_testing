@@ -798,486 +798,486 @@ function iterator_f()
 end
 
 # %%
-tt = 1
-if tt == 1
-    Threads.@threads for ii in 1:10
-end
-
-# %%
-macro sayhello()
-    return eval(Threads.@threads)
-end
-
-# %%
-function ttb()
-        # note, the reference bus is always bus #1
-    #
-    # first, get the ctg limits
-    s_max_ctg = [prm.acline.mva_ub_em; prm.xfm.mva_ub_em]
-
-    # get the ordered names of all components
-    ac_ids = [prm.acline.id; prm.xfm.id ]
-
-    # get the ordered (negative!!) susceptances
-    ac_b_params = -[prm.acline.b_sr; prm.xfm.b_sr]
-    
-    # build the full incidence matrix: E = lines x buses
-    E  = QuasiGrad.build_incidence(idx, prm, stt, sys)
-    Er = E[:,2:end]
-    ErT = copy(Er')
-
-    # get the diagonal admittance matrix   => Ybs == "b susceptance"
-    Ybs = QuasiGrad.spdiagm(ac_b_params)
-    Yb  = E'*Ybs*E
-    Ybr = Yb[2:end,2:end]  # use @view ? 
-
-    # should we precondition the base case?
-    #
-    # Note: Ybr should be sparse!! otherwise,
-    # the sparse preconditioner won't have any memory limits and
-    # will be the full Chol-decomp -- not a big deal, I guess..
-    if qG.base_solver == "pcg"
-        if sys.nb <= qG.min_buses_for_krylov
-            # too few buses -- use LU
-            @warn "Not enough buses for Krylov! Using LU anyways."
-        end
-
-        # time is short -- let's jsut always use ldl preconditioner -- it's just as fast
-        Ybr_ChPr = QuasiGrad.Preconditioners.lldl(Ybr, memory = qG.cutoff_level);
-
-        # OG#2 solution!
-            # can we build cholesky?
-            # if minimum(ac_b_params) < 0.0
-            #     Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
-            # else
-            #     @info "Unsing an ldl preconditioner."
-            #     Ybr_ChPr = QuasiGrad.ldl(Ybr, qG.cutoff_level);
-            # end
-
-        # OG#1 solution!
-            # # test for negative reactances -- @info "Preconditioning is disabled."
-            # if minimum(ac_b_params) < 0.0
-            #     # Amrit Pandey: "watch out for negatvive reactance! You will lose
-            #     #                pos-sem-def of the Cholesky preconditioner."
-            #     abs_b    = abs.(ac_b_params)
-            #     abs_Ybr  = (E'*QuasiGrad.spdiagm(abs_b)*E)[2:end,2:end] 
-            #     Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(abs_Ybr, qG.cutoff_level)
-            # else
-            #     Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
-            # end
-    else
-        # time is short -- let's jsut always use ldl preconditioner -- it's just as fast
-        Ybr_ChPr = QuasiGrad.Preconditioners.lldl(Ybr, memory = qG.cutoff_level);
-            # # => Ybr_ChPr = QuasiGrad.I
-            # Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
-    end
-    
-    # should we build the cholesky decomposition of the base case
-    # admittance matrix? we build this to compute high-fidelity
-    # solutions of the rank-1 update matrices
-    if qG.build_basecase_cholesky
-        if minimum(ac_b_params) < 0.0
-            @info "Yb not PSd -- using ldlt (instead of cholesky) to construct WMI update vectors."
-            Ybr_Ch = QuasiGrad.ldlt(Ybr)
-        else
-            Ybr_Ch = QuasiGrad.cholesky(Ybr)
-        end
-    else
-        # this is nonsense
-        Ybr_Ch = QuasiGrad.I
-    end
-
-    # get the flow matrix
-    Yfr  = Ybs*Er
-    YfrT = copy(Yfr')
-
-    # build the low-rank contingecy updates
-    #
-    # base: Y_b*theta_b = p
-    # ctg:  Y_c*theta_c = p
-    #       Y_c = Y_b + uk'*uk
-    ctg_out_ind = Dict(ctg_ii => Vector{Int64}(undef, length(prm.ctg.components[ctg_ii])) for ctg_ii in 1:sys.nctg)
-    ctg_params  = Dict(ctg_ii => Vector{Float64}(undef, length(prm.ctg.components[ctg_ii])) for ctg_ii in 1:sys.nctg)
-    
-    # should we build the full ctg matrices?
-    if qG.build_ctg_full == true
-        nac   = sys.nac
-        Ybr_k = Dict(ctg_ii => QuasiGrad.spzeros(nac,nac) for ctg_ii in 1:sys.nctg)
-    else
-        # build something small of the correct data type
-        Ybr_k = Dict(1 => QuasiGrad.spzeros(1,1))
-    end
-
-    # and/or, should we build the low rank ctg elements?
-    if qG.build_ctg_lowrank == true
-        # no need => v_k = Dict(ctg_ii => QuasiGrad.spzeros(nac) for ctg_ii in 1:sys.nctg)
-        # no need => b_k = Dict(ctg_ii => 0.0 for ctg_ii in 1:sys.nctg)
-        u_k = Dict(ctg_ii => zeros(sys.nb-1) for ctg_ii in 1:sys.nctg) # Dict(ctg_ii => QuasiGrad.spzeros(sys.nb-1) for ctg_ii in 1:sys.nctg)
-        g_k = Dict(ctg_ii => 0.0             for ctg_ii in 1:sys.nctg)
-        # if the "w_k" formulation is wanted => w_k = Dict(ctg_ii => QuasiGrad.spzeros(sys.nb-1) for ctg_ii in 1:sys.nctg)
-    else
-        v_k = 0
-        b_k = 0
-    end
-
-    # loop over components (see below for comments!!!)
-    for ctg_ii in 1:sys.nctg
-        cmpnts = prm.ctg.components[ctg_ii]
-        for (cmp_ii,cmp) in enumerate(cmpnts)
-            cmp_index = findfirst(x -> x == cmp, ac_ids) 
-            ctg_out_ind[ctg_ii][cmp_ii] = cmp_index
-            ctg_params[ctg_ii][cmp_ii]  = -ac_b_params[cmp_index]
-        end
-    end
-    QuasiGrad.@batch per=core for ctg_ii in 1:sys.nctg
-    # @floop ThreadedEx(basesize = sys.nctg ÷ qG.num_threads) for ctg_ii in 1:sys.nctg
-        # this code is optimized -- see above for comments!!!
-        u_k[ctg_ii] .= Ybr_Ch\Er[ctg_out_ind[ctg_ii][1],:]
-        g_k[ctg_ii]  = -ac_b_params[ctg_out_ind[ctg_ii][1]]/(1.0+(QuasiGrad.dot(Er[ctg_out_ind[ctg_ii][1],:],u_k[ctg_ii]))*-ac_b_params[ctg_out_ind[ctg_ii][1]])
-    end
-end
-
-function ttf()
-        # note, the reference bus is always bus #1
-    #
-    # first, get the ctg limits
-    s_max_ctg = [prm.acline.mva_ub_em; prm.xfm.mva_ub_em]
-
-    # get the ordered names of all components
-    ac_ids = [prm.acline.id; prm.xfm.id ]
-
-    # get the ordered (negative!!) susceptances
-    ac_b_params = -[prm.acline.b_sr; prm.xfm.b_sr]
-    
-    # build the full incidence matrix: E = lines x buses
-    E  = QuasiGrad.build_incidence(idx, prm, stt, sys)
-    Er = E[:,2:end]
-    ErT = copy(Er')
-
-    # get the diagonal admittance matrix   => Ybs == "b susceptance"
-    Ybs = QuasiGrad.spdiagm(ac_b_params)
-    Yb  = E'*Ybs*E
-    Ybr = Yb[2:end,2:end]  # use @view ? 
-
-    # should we precondition the base case?
-    #
-    # Note: Ybr should be sparse!! otherwise,
-    # the sparse preconditioner won't have any memory limits and
-    # will be the full Chol-decomp -- not a big deal, I guess..
-    if qG.base_solver == "pcg"
-        if sys.nb <= qG.min_buses_for_krylov
-            # too few buses -- use LU
-            @warn "Not enough buses for Krylov! Using LU anyways."
-        end
-
-        # time is short -- let's jsut always use ldl preconditioner -- it's just as fast
-        Ybr_ChPr = QuasiGrad.Preconditioners.lldl(Ybr, memory = qG.cutoff_level);
-
-        # OG#2 solution!
-            # can we build cholesky?
-            # if minimum(ac_b_params) < 0.0
-            #     Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
-            # else
-            #     @info "Unsing an ldl preconditioner."
-            #     Ybr_ChPr = QuasiGrad.ldl(Ybr, qG.cutoff_level);
-            # end
-
-        # OG#1 solution!
-            # # test for negative reactances -- @info "Preconditioning is disabled."
-            # if minimum(ac_b_params) < 0.0
-            #     # Amrit Pandey: "watch out for negatvive reactance! You will lose
-            #     #                pos-sem-def of the Cholesky preconditioner."
-            #     abs_b    = abs.(ac_b_params)
-            #     abs_Ybr  = (E'*QuasiGrad.spdiagm(abs_b)*E)[2:end,2:end] 
-            #     Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(abs_Ybr, qG.cutoff_level)
-            # else
-            #     Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
-            # end
-    else
-        # time is short -- let's jsut always use ldl preconditioner -- it's just as fast
-        Ybr_ChPr = QuasiGrad.Preconditioners.lldl(Ybr, memory = qG.cutoff_level);
-            # # => Ybr_ChPr = QuasiGrad.I
-            # Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
-    end
-    
-    # should we build the cholesky decomposition of the base case
-    # admittance matrix? we build this to compute high-fidelity
-    # solutions of the rank-1 update matrices
-    if qG.build_basecase_cholesky
-        if minimum(ac_b_params) < 0.0
-            @info "Yb not PSd -- using ldlt (instead of cholesky) to construct WMI update vectors."
-            Ybr_Ch = QuasiGrad.ldlt(Ybr)
-        else
-            Ybr_Ch = QuasiGrad.cholesky(Ybr)
-        end
-    else
-        # this is nonsense
-        Ybr_Ch = QuasiGrad.I
-    end
-
-    # get the flow matrix
-    Yfr  = Ybs*Er
-    YfrT = copy(Yfr')
-
-    # build the low-rank contingecy updates
-    #
-    # base: Y_b*theta_b = p
-    # ctg:  Y_c*theta_c = p
-    #       Y_c = Y_b + uk'*uk
-    ctg_out_ind = Dict(ctg_ii => Vector{Int64}(undef, length(prm.ctg.components[ctg_ii])) for ctg_ii in 1:sys.nctg)
-    ctg_params  = Dict(ctg_ii => Vector{Float64}(undef, length(prm.ctg.components[ctg_ii])) for ctg_ii in 1:sys.nctg)
-    
-    # should we build the full ctg matrices?
-    if qG.build_ctg_full == true
-        nac   = sys.nac
-        Ybr_k = Dict(ctg_ii => QuasiGrad.spzeros(nac,nac) for ctg_ii in 1:sys.nctg)
-    else
-        # build something small of the correct data type
-        Ybr_k = Dict(1 => QuasiGrad.spzeros(1,1))
-    end
-
-    # and/or, should we build the low rank ctg elements?
-    if qG.build_ctg_lowrank == true
-        # no need => v_k = Dict(ctg_ii => QuasiGrad.spzeros(nac) for ctg_ii in 1:sys.nctg)
-        # no need => b_k = Dict(ctg_ii => 0.0 for ctg_ii in 1:sys.nctg)
-        u_k = Dict(ctg_ii => zeros(sys.nb-1) for ctg_ii in 1:sys.nctg) # Dict(ctg_ii => QuasiGrad.spzeros(sys.nb-1) for ctg_ii in 1:sys.nctg)
-        g_k = Dict(ctg_ii => 0.0             for ctg_ii in 1:sys.nctg)
-        # if the "w_k" formulation is wanted => w_k = Dict(ctg_ii => QuasiGrad.spzeros(sys.nb-1) for ctg_ii in 1:sys.nctg)
-    else
-        v_k = 0
-        b_k = 0
-    end
-
-    # loop over components (see below for comments!!!)
-    for ctg_ii in 1:sys.nctg
-        cmpnts = prm.ctg.components[ctg_ii]
-        for (cmp_ii,cmp) in enumerate(cmpnts)
-            cmp_index = findfirst(x -> x == cmp, ac_ids) 
-            ctg_out_ind[ctg_ii][cmp_ii] = cmp_index
-            ctg_params[ctg_ii][cmp_ii]  = -ac_b_params[cmp_index]
-        end
-    end
-    # @batch per=core for ctg_ii in 1:sys.nctg
-    QuasiGrad.FLoops.assistant(false)
-    QuasiGrad.@floop QuasiGrad.ThreadedEx(basesize = sys.nctg ÷ qG.num_threads) for ctg_ii in 1:sys.nctg
-        # this code is optimized -- see above for comments!!!
-        u_k[ctg_ii] .= Ybr_Ch\Er[ctg_out_ind[ctg_ii][1],:]
-        g_k[ctg_ii]  = -ac_b_params[ctg_out_ind[ctg_ii][1]]/(1.0+(QuasiGrad.dot(Er[ctg_out_ind[ctg_ii][1],:],u_k[ctg_ii]))*-ac_b_params[ctg_out_ind[ctg_ii][1]])
-    end
-end
-
-# %%
-qG.num_threads = 1
-@btime ttb()
-@btime ttf()
-
-# %%
-a      = 1:100
-chunks = Iterators.partition(a, length(a) ÷ Threads.nthreads())
-
-# %%
-
-function sum_single(a)
-    s = 0
-    for i in a
-        s += i
-    end
-    s
-end
-
-# %%
-a = 1:100
-chunks = Iterators.partition(a, length(a) ÷ Threads.nthreads())
-tasks = map(chunks) do chunk
-    Threads.@spawn sum_single(chunk)
-end
-chunk_sums = fetch.(tasks)
-
-# %% ========
-#return sum_single(chunk_sums)
-gamma = 0
-@floop ThreadedEx() for ii in 1:50
-    @reduce(gamma += 1)
-    println(gamma)
-end
-
-println(gamma)
-
-# %%
-l = Threads.SpinLock()
-x = 0
-Threads.@threads for i in 1:2
-    Threads.lock(l)
-    x += 1  # this block is executed only in one thread
-    Threads.unlock(l)
-end
-
-println(x)
-
-# %%
-
-function f(c1::Vector{Vector{Float64}},c2::Vector{Vector{Float64}},c3::Vector{Vector{Float64}})
-    l = Threads.SpinLock()
-    #l = Threads.ReentrantLock()
-    x = 0
-    Threads.@threads for i in 1:100
-        Threads.lock(l) do
-            x += 1
-        end
-
-        #Threads.lock(l)
-        #x += 1  # this block is executed only in one thread
-        #Threads.unlock(l)
-
-        c1[i] .= c1[i].^2
-        c2[i] .= c2[i].^2
-        c3[i] .= c3[i].^2
-    end
-    # println("===")
-    return x
-end
-
-# %%
-c1 = [zeros(500000) for ii in 1:100]
-c2 = [zeros(500000) for ii in 1:100]
-c3 = [zeros(500000) for ii in 1:100]
-
-# %%
-
-@btime f(c1, c2, c3)
-
-# %%
-#@time l = Threads.SpinLock()
-@time l = Threads.ReentrantLock()
-
-# %%===========
-# => lck = Threads.SpinLock() -- SpinLock slower than ReentrantLock ..?
-
-function ff()   
-    lck = Threads.ReentrantLock()
-    ready_to_use = ones(Bool, qG.num_threads)
-    println("===")
-
-    Threads.@threads for ii in 1:100
-        Threads.lock(lck) do
-            thrID = findfirst(ready_to_use)
-            ready_to_use[thrID] = false
-            println(thrID)
-        end
-
-        g = zeros(1000000)
-        # all done!!
-        Threads.lock(lck) do
-            ready_to_use[thrID] = true
-        end
-    end
-
-    println(ready_to_use)
-end
-
-ff()
-
-# %%
-for gg in zip(enumerate(3:8),17:22)
-    println(gg)
-end
-
-# %%
-function fg(v::Vector{Float64}, w::Vector{Float64})
-    @floop ThreadedEx(basesize = 100 ÷ 10) for ii in 1:100
-        @reduce(vvv .+= w)
-    end
-
-    return vvv
-end
-
-function fgd(v::Vector{Float64}, w::Vector{Float64})
-    @floop ThreadedEx(basesize = 100 ÷ 10) for ii in 1:100
-        @reduce() do (v; w)
-            v .+= w
-        end
-    end
-
-    return v
-end
-
-
-# %%
-vv = ones(10000)
-@btime fg(vv, vv);
-@btime fgd(vv, vv);
-
-# %%
-vv = ones(150)
-
-t1 = fg(vv, vv);
-
-t2 = fgd(vv, vv);
-
-# %% test ThreadsX
-gamma = zeros()
-v = [randn(10000) for ii in 1:100]
-ThreadsX.sum(v[ii] for ii in 1:100)
-sum(v[ii] for ii in 1:100)
-
-# %% ==============
-f1() = ThreadsX.sum(v[ii] for ii in 1:100);
-f2() = sum(v[ii] for ii in 1:100);
-
-# %%
-t = randn(10000)
-@time ThreadsX.sum(t)
-@time sum(t)
-
-# %%
-
-
-function f3(vv, v)
-    for ii in 1:100
-        vv[ii] .+= v[ii]
-    end
-end
-
-# %%
-v = [randn(1000) for ii in 1:10]
-vv = randn(1000)
-f() = vv .= sum(v)
-
-# %%
-@time f();
-
-# %%
-v1 = randn(10000)
-v2 = randn(10000)
-
-# %%
-@btime v1 .= f1();
-@btime v2 .= f2();
-
-# %%
-v = [randn(10000) for ii in 1:100]
-
-f1() = ThreadsX.sum(v[ii] for ii in 1:100);
-f2() = sum(v[ii] for ii in 1:100);
-f3() = ThreadsX.sum(v);
-f4() = sum(v);
-
-@btime f1();
-@btime f2();
-@btime f3();
-@btime f4();
-
-# %%
-v = [randn(10000) for ii in 1:100]
-w = randn(10000)
-
-function f5(w::Vector{Float64},v::Vector{Vector{Float64}})
-    for ii in 1:100
-        for jj in 1:10000
-            w[jj] += v[ii][jj]
-        end
-    end
-end
-
-# %%
-@btime f5(w,v);
+#tt = 1
+#if tt == 1
+#    Threads.@threads for ii in 1:10
+#end
+#
+## %%
+#macro sayhello()
+#    return eval(Threads.@threads)
+#end
+#
+## %%
+#function ttb()
+#        # note, the reference bus is always bus #1
+#    #
+#    # first, get the ctg limits
+#    s_max_ctg = [prm.acline.mva_ub_em; prm.xfm.mva_ub_em]
+#
+#    # get the ordered names of all components
+#    ac_ids = [prm.acline.id; prm.xfm.id ]
+#
+#    # get the ordered (negative!!) susceptances
+#    ac_b_params = -[prm.acline.b_sr; prm.xfm.b_sr]
+#    
+#    # build the full incidence matrix: E = lines x buses
+#    E  = QuasiGrad.build_incidence(idx, prm, stt, sys)
+#    Er = E[:,2:end]
+#    ErT = copy(Er')
+#
+#    # get the diagonal admittance matrix   => Ybs == "b susceptance"
+#    Ybs = QuasiGrad.spdiagm(ac_b_params)
+#    Yb  = E'*Ybs*E
+#    Ybr = Yb[2:end,2:end]  # use @view ? 
+#
+#    # should we precondition the base case?
+#    #
+#    # Note: Ybr should be sparse!! otherwise,
+#    # the sparse preconditioner won't have any memory limits and
+#    # will be the full Chol-decomp -- not a big deal, I guess..
+#    if qG.base_solver == "pcg"
+#        if sys.nb <= qG.min_buses_for_krylov
+#            # too few buses -- use LU
+#            @warn "Not enough buses for Krylov! Using LU anyways."
+#        end
+#
+#        # time is short -- let's jsut always use ldl preconditioner -- it's just as fast
+#        Ybr_ChPr = QuasiGrad.Preconditioners.lldl(Ybr, memory = qG.cutoff_level);
+#
+#        # OG#2 solution!
+#            # can we build cholesky?
+#            # if minimum(ac_b_params) < 0.0
+#            #     Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
+#            # else
+#            #     @info "Unsing an ldl preconditioner."
+#            #     Ybr_ChPr = QuasiGrad.ldl(Ybr, qG.cutoff_level);
+#            # end
+#
+#        # OG#1 solution!
+#            # # test for negative reactances -- @info "Preconditioning is disabled."
+#            # if minimum(ac_b_params) < 0.0
+#            #     # Amrit Pandey: "watch out for negatvive reactance! You will lose
+#            #     #                pos-sem-def of the Cholesky preconditioner."
+#            #     abs_b    = abs.(ac_b_params)
+#            #     abs_Ybr  = (E'*QuasiGrad.spdiagm(abs_b)*E)[2:end,2:end] 
+#            #     Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(abs_Ybr, qG.cutoff_level)
+#            # else
+#            #     Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
+#            # end
+#    else
+#        # time is short -- let's jsut always use ldl preconditioner -- it's just as fast
+#        Ybr_ChPr = QuasiGrad.Preconditioners.lldl(Ybr, memory = qG.cutoff_level);
+#            # # => Ybr_ChPr = QuasiGrad.I
+#            # Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
+#    end
+#    
+#    # should we build the cholesky decomposition of the base case
+#    # admittance matrix? we build this to compute high-fidelity
+#    # solutions of the rank-1 update matrices
+#    if qG.build_basecase_cholesky
+#        if minimum(ac_b_params) < 0.0
+#            @info "Yb not PSd -- using ldlt (instead of cholesky) to construct WMI update vectors."
+#            Ybr_Ch = QuasiGrad.ldlt(Ybr)
+#        else
+#            Ybr_Ch = QuasiGrad.cholesky(Ybr)
+#        end
+#    else
+#        # this is nonsense
+#        Ybr_Ch = QuasiGrad.I
+#    end
+#
+#    # get the flow matrix
+#    Yfr  = Ybs*Er
+#    YfrT = copy(Yfr')
+#
+#    # build the low-rank contingecy updates
+#    #
+#    # base: Y_b*theta_b = p
+#    # ctg:  Y_c*theta_c = p
+#    #       Y_c = Y_b + uk'*uk
+#    ctg_out_ind = Dict(ctg_ii => Vector{Int64}(undef, length(prm.ctg.components[ctg_ii])) for ctg_ii in 1:sys.nctg)
+#    ctg_params  = Dict(ctg_ii => Vector{Float64}(undef, length(prm.ctg.components[ctg_ii])) for ctg_ii in 1:sys.nctg)
+#    
+#    # should we build the full ctg matrices?
+#    if qG.build_ctg_full == true
+#        nac   = sys.nac
+#        Ybr_k = Dict(ctg_ii => QuasiGrad.spzeros(nac,nac) for ctg_ii in 1:sys.nctg)
+#    else
+#        # build something small of the correct data type
+#        Ybr_k = Dict(1 => QuasiGrad.spzeros(1,1))
+#    end
+#
+#    # and/or, should we build the low rank ctg elements?
+#    if qG.build_ctg_lowrank == true
+#        # no need => v_k = Dict(ctg_ii => QuasiGrad.spzeros(nac) for ctg_ii in 1:sys.nctg)
+#        # no need => b_k = Dict(ctg_ii => 0.0 for ctg_ii in 1:sys.nctg)
+#        u_k = Dict(ctg_ii => zeros(sys.nb-1) for ctg_ii in 1:sys.nctg) # Dict(ctg_ii => QuasiGrad.spzeros(sys.nb-1) for ctg_ii in 1:sys.nctg)
+#        g_k = Dict(ctg_ii => 0.0             for ctg_ii in 1:sys.nctg)
+#        # if the "w_k" formulation is wanted => w_k = Dict(ctg_ii => QuasiGrad.spzeros(sys.nb-1) for ctg_ii in 1:sys.nctg)
+#    else
+#        v_k = 0
+#        b_k = 0
+#    end
+#
+#    # loop over components (see below for comments!!!)
+#    for ctg_ii in 1:sys.nctg
+#        cmpnts = prm.ctg.components[ctg_ii]
+#        for (cmp_ii,cmp) in enumerate(cmpnts)
+#            cmp_index = findfirst(x -> x == cmp, ac_ids) 
+#            ctg_out_ind[ctg_ii][cmp_ii] = cmp_index
+#            ctg_params[ctg_ii][cmp_ii]  = -ac_b_params[cmp_index]
+#        end
+#    end
+#    QuasiGrad.@batch per=core for ctg_ii in 1:sys.nctg
+#    # @floop ThreadedEx(basesize = sys.nctg ÷ qG.num_threads) for ctg_ii in 1:sys.nctg
+#        # this code is optimized -- see above for comments!!!
+#        u_k[ctg_ii] .= Ybr_Ch\Er[ctg_out_ind[ctg_ii][1],:]
+#        g_k[ctg_ii]  = -ac_b_params[ctg_out_ind[ctg_ii][1]]/(1.0+(QuasiGrad.dot(Er[ctg_out_ind[ctg_ii][1],:],u_k[ctg_ii]))*-ac_b_params[ctg_out_ind[ctg_ii][1]])
+#    end
+#end
+#
+#function ttf()
+#        # note, the reference bus is always bus #1
+#    #
+#    # first, get the ctg limits
+#    s_max_ctg = [prm.acline.mva_ub_em; prm.xfm.mva_ub_em]
+#
+#    # get the ordered names of all components
+#    ac_ids = [prm.acline.id; prm.xfm.id ]
+#
+#    # get the ordered (negative!!) susceptances
+#    ac_b_params = -[prm.acline.b_sr; prm.xfm.b_sr]
+#    
+#    # build the full incidence matrix: E = lines x buses
+#    E  = QuasiGrad.build_incidence(idx, prm, stt, sys)
+#    Er = E[:,2:end]
+#    ErT = copy(Er')
+#
+#    # get the diagonal admittance matrix   => Ybs == "b susceptance"
+#    Ybs = QuasiGrad.spdiagm(ac_b_params)
+#    Yb  = E'*Ybs*E
+#    Ybr = Yb[2:end,2:end]  # use @view ? 
+#
+#    # should we precondition the base case?
+#    #
+#    # Note: Ybr should be sparse!! otherwise,
+#    # the sparse preconditioner won't have any memory limits and
+#    # will be the full Chol-decomp -- not a big deal, I guess..
+#    if qG.base_solver == "pcg"
+#        if sys.nb <= qG.min_buses_for_krylov
+#            # too few buses -- use LU
+#            @warn "Not enough buses for Krylov! Using LU anyways."
+#        end
+#
+#        # time is short -- let's jsut always use ldl preconditioner -- it's just as fast
+#        Ybr_ChPr = QuasiGrad.Preconditioners.lldl(Ybr, memory = qG.cutoff_level);
+#
+#        # OG#2 solution!
+#            # can we build cholesky?
+#            # if minimum(ac_b_params) < 0.0
+#            #     Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
+#            # else
+#            #     @info "Unsing an ldl preconditioner."
+#            #     Ybr_ChPr = QuasiGrad.ldl(Ybr, qG.cutoff_level);
+#            # end
+#
+#        # OG#1 solution!
+#            # # test for negative reactances -- @info "Preconditioning is disabled."
+#            # if minimum(ac_b_params) < 0.0
+#            #     # Amrit Pandey: "watch out for negatvive reactance! You will lose
+#            #     #                pos-sem-def of the Cholesky preconditioner."
+#            #     abs_b    = abs.(ac_b_params)
+#            #     abs_Ybr  = (E'*QuasiGrad.spdiagm(abs_b)*E)[2:end,2:end] 
+#            #     Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(abs_Ybr, qG.cutoff_level)
+#            # else
+#            #     Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
+#            # end
+#    else
+#        # time is short -- let's jsut always use ldl preconditioner -- it's just as fast
+#        Ybr_ChPr = QuasiGrad.Preconditioners.lldl(Ybr, memory = qG.cutoff_level);
+#            # # => Ybr_ChPr = QuasiGrad.I
+#            # Ybr_ChPr = QuasiGrad.CholeskyPreconditioner(Ybr, qG.cutoff_level);
+#    end
+#    
+#    # should we build the cholesky decomposition of the base case
+#    # admittance matrix? we build this to compute high-fidelity
+#    # solutions of the rank-1 update matrices
+#    if qG.build_basecase_cholesky
+#        if minimum(ac_b_params) < 0.0
+#            @info "Yb not PSd -- using ldlt (instead of cholesky) to construct WMI update vectors."
+#            Ybr_Ch = QuasiGrad.ldlt(Ybr)
+#        else
+#            Ybr_Ch = QuasiGrad.cholesky(Ybr)
+#        end
+#    else
+#        # this is nonsense
+#        Ybr_Ch = QuasiGrad.I
+#    end
+#
+#    # get the flow matrix
+#    Yfr  = Ybs*Er
+#    YfrT = copy(Yfr')
+#
+#    # build the low-rank contingecy updates
+#    #
+#    # base: Y_b*theta_b = p
+#    # ctg:  Y_c*theta_c = p
+#    #       Y_c = Y_b + uk'*uk
+#    ctg_out_ind = Dict(ctg_ii => Vector{Int64}(undef, length(prm.ctg.components[ctg_ii])) for ctg_ii in 1:sys.nctg)
+#    ctg_params  = Dict(ctg_ii => Vector{Float64}(undef, length(prm.ctg.components[ctg_ii])) for ctg_ii in 1:sys.nctg)
+#    
+#    # should we build the full ctg matrices?
+#    if qG.build_ctg_full == true
+#        nac   = sys.nac
+#        Ybr_k = Dict(ctg_ii => QuasiGrad.spzeros(nac,nac) for ctg_ii in 1:sys.nctg)
+#    else
+#        # build something small of the correct data type
+#        Ybr_k = Dict(1 => QuasiGrad.spzeros(1,1))
+#    end
+#
+#    # and/or, should we build the low rank ctg elements?
+#    if qG.build_ctg_lowrank == true
+#        # no need => v_k = Dict(ctg_ii => QuasiGrad.spzeros(nac) for ctg_ii in 1:sys.nctg)
+#        # no need => b_k = Dict(ctg_ii => 0.0 for ctg_ii in 1:sys.nctg)
+#        u_k = Dict(ctg_ii => zeros(sys.nb-1) for ctg_ii in 1:sys.nctg) # Dict(ctg_ii => QuasiGrad.spzeros(sys.nb-1) for ctg_ii in 1:sys.nctg)
+#        g_k = Dict(ctg_ii => 0.0             for ctg_ii in 1:sys.nctg)
+#        # if the "w_k" formulation is wanted => w_k = Dict(ctg_ii => QuasiGrad.spzeros(sys.nb-1) for ctg_ii in 1:sys.nctg)
+#    else
+#        v_k = 0
+#        b_k = 0
+#    end
+#
+#    # loop over components (see below for comments!!!)
+#    for ctg_ii in 1:sys.nctg
+#        cmpnts = prm.ctg.components[ctg_ii]
+#        for (cmp_ii,cmp) in enumerate(cmpnts)
+#            cmp_index = findfirst(x -> x == cmp, ac_ids) 
+#            ctg_out_ind[ctg_ii][cmp_ii] = cmp_index
+#            ctg_params[ctg_ii][cmp_ii]  = -ac_b_params[cmp_index]
+#        end
+#    end
+#    # @batch per=core for ctg_ii in 1:sys.nctg
+#    QuasiGrad.FLoops.assistant(false)
+#    QuasiGrad.@floop QuasiGrad.ThreadedEx(basesize = sys.nctg ÷ qG.num_threads) for ctg_ii in 1:sys.nctg
+#        # this code is optimized -- see above for comments!!!
+#        u_k[ctg_ii] .= Ybr_Ch\Er[ctg_out_ind[ctg_ii][1],:]
+#        g_k[ctg_ii]  = -ac_b_params[ctg_out_ind[ctg_ii][1]]/(1.0+(QuasiGrad.dot(Er[ctg_out_ind[ctg_ii][1],:],u_k[ctg_ii]))*-ac_b_params[ctg_out_ind[ctg_ii][1]])
+#    end
+#end
+#
+## %%
+#qG.num_threads = 1
+#@btime ttb()
+#@btime ttf()
+#
+## %%
+#a      = 1:100
+#chunks = Iterators.partition(a, length(a) ÷ Threads.nthreads())
+#
+## %%
+#
+#function sum_single(a)
+#    s = 0
+#    for i in a
+#        s += i
+#    end
+#    s
+#end
+#
+## %%
+#a = 1:100
+#chunks = Iterators.partition(a, length(a) ÷ Threads.nthreads())
+#tasks = map(chunks) do chunk
+#    Threads.@spawn sum_single(chunk)
+#end
+#chunk_sums = fetch.(tasks)
+#
+## %% ========
+##return sum_single(chunk_sums)
+#gamma = 0
+#@floop ThreadedEx() for ii in 1:50
+#    @reduce(gamma += 1)
+#    println(gamma)
+#end
+#
+#println(gamma)
+#
+## %%
+#l = Threads.SpinLock()
+#x = 0
+#Threads.@threads for i in 1:2
+#    Threads.lock(l)
+#    x += 1  # this block is executed only in one thread
+#    Threads.unlock(l)
+#end
+#
+#println(x)
+#
+## %%
+#
+#function f(c1::Vector{Vector{Float64}},c2::Vector{Vector{Float64}},c3::Vector{Vector{Float64}})
+#    l = Threads.SpinLock()
+#    #l = Threads.ReentrantLock()
+#    x = 0
+#    Threads.@threads for i in 1:100
+#        Threads.lock(l) do
+#            x += 1
+#        end
+#
+#        #Threads.lock(l)
+#        #x += 1  # this block is executed only in one thread
+#        #Threads.unlock(l)
+#
+#        c1[i] .= c1[i].^2
+#        c2[i] .= c2[i].^2
+#        c3[i] .= c3[i].^2
+#    end
+#    # println("===")
+#    return x
+#end
+#
+## %%
+#c1 = [zeros(500000) for ii in 1:100]
+#c2 = [zeros(500000) for ii in 1:100]
+#c3 = [zeros(500000) for ii in 1:100]
+#
+## %%
+#
+#@btime f(c1, c2, c3)
+#
+## %%
+##@time l = Threads.SpinLock()
+#@time l = Threads.ReentrantLock()
+#
+## %%===========
+## => lck = Threads.SpinLock() -- SpinLock slower than ReentrantLock ..?
+#
+#function ff()   
+#    lck = Threads.ReentrantLock()
+#    ready_to_use = ones(Bool, qG.num_threads)
+#    println("===")
+#
+#    Threads.@threads for ii in 1:100
+#        Threads.lock(lck) do
+#            thrID = findfirst(ready_to_use)
+#            ready_to_use[thrID] = false
+#            println(thrID)
+#        end
+#
+#        g = zeros(1000000)
+#        # all done!!
+#        Threads.lock(lck) do
+#            ready_to_use[thrID] = true
+#        end
+#    end
+#
+#    println(ready_to_use)
+#end
+#
+#ff()
+#
+## %%
+#for gg in zip(enumerate(3:8),17:22)
+#    println(gg)
+#end
+#
+## %%
+#function fg(v::Vector{Float64}, w::Vector{Float64})
+#    @floop ThreadedEx(basesize = 100 ÷ 10) for ii in 1:100
+#        @reduce(vvv .+= w)
+#    end
+#
+#    return vvv
+#end
+#
+#function fgd(v::Vector{Float64}, w::Vector{Float64})
+#    @floop ThreadedEx(basesize = 100 ÷ 10) for ii in 1:100
+#        @reduce() do (v; w)
+#            v .+= w
+#        end
+#    end
+#
+#    return v
+#end
+#
+#
+## %%
+#vv = ones(10000)
+#@btime fg(vv, vv);
+#@btime fgd(vv, vv);
+#
+## %%
+#vv = ones(150)
+#
+#t1 = fg(vv, vv);
+#
+#t2 = fgd(vv, vv);
+#
+## %% test ThreadsX
+#gamma = zeros()
+#v = [randn(10000) for ii in 1:100]
+#ThreadsX.sum(v[ii] for ii in 1:100)
+#sum(v[ii] for ii in 1:100)
+#
+## %% ==============
+#f1() = ThreadsX.sum(v[ii] for ii in 1:100);
+#f2() = sum(v[ii] for ii in 1:100);
+#
+## %%
+#t = randn(10000)
+#@time ThreadsX.sum(t)
+#@time sum(t)
+#
+## %%
+#
+#
+#function f3(vv, v)
+#    for ii in 1:100
+#        vv[ii] .+= v[ii]
+#    end
+#end
+#
+## %%
+#v = [randn(1000) for ii in 1:10]
+#vv = randn(1000)
+#f() = vv .= sum(v)
+#
+## %%
+#@time f();
+#
+## %%
+#v1 = randn(10000)
+#v2 = randn(10000)
+#
+## %%
+#@btime v1 .= f1();
+#@btime v2 .= f2();
+#
+## %%
+#v = [randn(10000) for ii in 1:100]
+#
+#f1() = ThreadsX.sum(v[ii] for ii in 1:100);
+#f2() = sum(v[ii] for ii in 1:100);
+#f3() = ThreadsX.sum(v);
+#f4() = sum(v);
+#
+#@btime f1();
+#@btime f2();
+#@btime f3();
+#@btime f4();
+#
+## %%
+#v = [randn(10000) for ii in 1:100]
+#w = randn(10000)
+#
+#function f5(w::Vector{Float64},v::Vector{Vector{Float64}})
+#    for ii in 1:100
+#        for jj in 1:10000
+#            w[jj] += v[ii][jj]
+#        end
+#    end
+#end
+#
+## %%
+#@btime f5(w,v);
