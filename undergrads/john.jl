@@ -1,7 +1,7 @@
 using Makie
 using GLMakie
 using QuasiGrad
-
+ 
 # call plotting tools 
 include("./informs/informs_plotting.jl")
 
@@ -11,10 +11,10 @@ InFile1 = "./data/c3s1_d1_600_scenario_001.json"
 # call the jsn data
 jsn = QuasiGrad.load_json(InFile1)
 
-# initialize the network 
+# %% initialize the network 
 adm, cgd, ctg, flw, grd, idx, lbf, mgd, ntk, prm, qG, scr, stt, sys, upd = QuasiGrad.base_initialization(jsn, Div=1, hpc_params=false);
 
-# solve a single time period power flow with adam
+# %% solve a single time period power flow with adam
 QuasiGrad.economic_dispatch_initialization!(cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd)
 stt0 = deepcopy(stt);
 
@@ -121,3 +121,11 @@ qG.skip_ctg_eval = false
 # stt = deepcopy(stt0);
 qG.adam_max_time = 100.0
 x_lim = run_adam_and_plot!(ax, fig, z_plt, adm, cgd, ctg, flw, grd, idx, mgd, ntk, prm, qG, scr, stt, sys, upd, x_lim, fp=true)
+
+
+# %% 
+function hello0(a::Int64)
+    b = a
+    a = 7
+    println(b)
+end
